@@ -31,7 +31,7 @@ pub use launcher::{get_hyprland_launcher_bind, launch_app, list_apps, search_app
 #[allow(unused_imports)]
 pub use hyprland::{
     generate_hyprland_config, get_active_window, get_hyprland_status, get_monitors,
-    get_workspaces, hypr_dispatch, switch_workspace,
+    get_workspaces, hypr_dispatch, save_hyprland_integration_config, switch_workspace,
 };
 #[allow(unused_imports)]
 pub use network::{get_active_connection_info, list_connections, network_available, nm_disconnect, wifi_connect, wifi_scan};

@@ -1,9 +1,10 @@
 use crate::state::AppState;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 mod commands;
 mod hyprland;
+mod layer_shell;
 mod pty;
 mod state;
 
@@ -37,8 +38,21 @@ pub fn run() {
         )
         .manage(app_state)
         .setup(|app| {
+            let launch_args: Vec<String> = std::env::args().skip(1).collect();
+            if !launch_args.is_empty() {
+                tracing::info!(?launch_args, "CLI args detected; external IPC dispatch is not implemented yet");
+            }
+
             let alt_space = Shortcut::new(Some(Modifiers::ALT), Code::Space);
             app.global_shortcut().register(alt_space)?;
+
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_fullscreen(true);
+                let _ = window.set_decorations(false);
+                let _ = window.set_resizable(false);
+                let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x: 0, y: 0 }));
+                crate::layer_shell::try_apply_layer_shell(&window);
+            }
 
             if crate::hyprland::ipc::is_hyprland_running() {
                 let handle = app.handle().clone();
@@ -103,6 +117,7 @@ pub fn run() {
             commands::hyprland::switch_workspace,
             commands::hyprland::hypr_dispatch,
             commands::hyprland::generate_hyprland_config,
+            commands::hyprland::save_hyprland_integration_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running eDEX-DE");

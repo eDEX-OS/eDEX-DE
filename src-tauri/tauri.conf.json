@@ -1,6 +1,6 @@
 {
   "productName": "eDEX-DE",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "identifier": "io.edex.de",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -15,10 +15,10 @@
         "title": "eDEX-DE",
         "width": 1920,
         "height": 1080,
-        "fullscreen": false,
+        "fullscreen": true,
         "decorations": false,
         "transparent": true,
-        "resizable": true,
+        "resizable": false,
         "center": true
       }
     ],

@@ -118,6 +118,8 @@ export const getMonitors = () => invoke<MonitorInfo[]>('get_monitors');
 export const switchWorkspace = (id: number) => invoke<void>('switch_workspace', { id });
 export const hyprDispatch = (action: string) => invoke<string>('hypr_dispatch', { action });
 export const generateHyprlandConfig = () => invoke<string>('generate_hyprland_config');
+export const saveHyprlandIntegrationConfig = () =>
+  invoke<string>('save_hyprland_integration_config');
 export const onHyprlandEvent = (cb: (event: { event: string; data: string }) => void) =>
   listen<{ event: string; data: string }>('hyprland-event', (e) => cb(e.payload));
 
