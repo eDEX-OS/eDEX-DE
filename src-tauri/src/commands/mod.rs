@@ -41,3 +41,13 @@ pub use fingerprint::{fprintd_status, fprintd_verify};
 pub use systemd::{get_unit_logs, get_unit_status, list_units, unit_action};
 #[allow(unused_imports)]
 pub use update_checker::check_for_update;
+
+pub mod privacy;
+#[allow(unused_imports)]
+pub use privacy::{
+    tailscale_available, tailscale_status, tailscale_login, tailscale_logout,
+    tailscale_up, tailscale_down, tailscale_set_exit_node,
+    tor_available, tor_status, tor_get_mode, tor_set_mode,
+    tor_request_bridges, tor_get_bridges, tor_set_bridges,
+    vpn_list_connections, vpn_connect, vpn_disconnect, vpn_import_wireguard,
+};

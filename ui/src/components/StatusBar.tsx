@@ -1,37 +1,60 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useSysinfo } from '../context';
 import { formatPercent } from '../utils';
-import { audioAvailable, getMasterVolume, setMasterVolume, toggleMute } from '../ipc';
+import { audioAvailable, getMasterVolume, setMasterVolume, toggleMute, tailscaleStatus, torStatus, vpnListConnections } from '../ipc';
 
-export function StatusBar() {
+interface StatusBarProps {
+  onOpenPrivacy?: () => void;
+}
+
+export function StatusBar({ onOpenPrivacy }: StatusBarProps) {
   const { cpu, ram, battery } = useSysinfo();
   const [volume, setVolume] = useState<number | null>(null);
   const [muted, setMuted] = useState(false);
   const [hasAudio, setHasAudio] = useState(false);
+  const [torMode, setTorMode] = useState('off');
+  const [tailscaleConnected, setTailscaleConnected] = useState(false);
+  const [vpnActive, setVpnActive] = useState(false);
   const ramPercent = ram && ram.total > 0 ? formatPercent((ram.used / ram.total) * 100) : '--';
 
   useEffect(() => {
     let mounted = true;
 
     audioAvailable().then((available) => {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setHasAudio(available);
       if (available) {
         getMasterVolume().then((value) => mounted && setVolume(value)).catch(() => {});
       }
     });
 
-    const id = window.setInterval(() => {
+    const pollPrivacy = async () => {
+      try {
+        const ts = await tailscaleStatus();
+        if (mounted) setTailscaleConnected(ts.backendState === 'Running' && ts.selfNode !== null);
+      } catch { if (mounted) setTailscaleConnected(false); }
+      try {
+        const t = await torStatus();
+        if (mounted) setTorMode(t.mode);
+      } catch { if (mounted) setTorMode('off'); }
+      try {
+        const vpns = await vpnListConnections();
+        if (mounted) setVpnActive(vpns.some((v) => v.active));
+      } catch { if (mounted) setVpnActive(false); }
+    };
+    pollPrivacy();
+
+    const audioId = window.setInterval(() => {
       if (hasAudio) {
         getMasterVolume().then((value) => mounted && setVolume(value)).catch(() => {});
       }
     }, 5000);
+    const privacyId = window.setInterval(pollPrivacy, 15_000);
 
     return () => {
       mounted = false;
-      window.clearInterval(id);
+      window.clearInterval(audioId);
+      window.clearInterval(privacyId);
     };
   }, [hasAudio]);
 
@@ -76,6 +99,19 @@ export function StatusBar() {
           <span class="vol-value">{volume}%</span>
         </span>
       )}
+      <span class="status-item status-privacy" onClick={onOpenPrivacy} title="Privacy (Ctrl+Shift+P)">
+        <span
+          class={`status-privacy-icon${torMode === 'transparent' ? ' active tor-transparent' : torMode === 'socks5' ? ' active tor-socks5' : ''}`}
+          title={`Tor: ${torMode}`}
+        >⊕</span>
+        <span
+          class={`status-privacy-icon${tailscaleConnected ? ' active tailscale-on' : ''}`}
+          title={tailscaleConnected ? 'Tailscale: connected' : 'Tailscale: off'}
+        >⬡</span>
+        {vpnActive && (
+          <span class="status-privacy-icon active vpn-on" title="VPN: active">⊞</span>
+        )}
+      </span>
     </div>
   );
 }

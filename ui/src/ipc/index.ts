@@ -13,6 +13,9 @@ import type {
   FileEntry,
   FuzzyMatch,
   AppEntry,
+  TailscaleStatus,
+  TorStatus,
+  VpnConnection,
 } from '../types';
 
 // Settings
@@ -197,3 +200,31 @@ export const getUnitLogs = (unit: string, lines?: number) =>
   invoke<string>('get_unit_logs', { unit, lines: lines ?? 50 });
 export const getUnitStatus = (unit: string, userUnits: boolean) =>
   invoke<string>('get_unit_status', { unit, userUnits });
+
+// Privacy — Tailscale
+export const tailscaleAvailable = () => invoke<boolean>('tailscale_available');
+export const tailscaleStatus = () => invoke<TailscaleStatus>('tailscale_status');
+export const tailscaleLogin = () => invoke<string>('tailscale_login');
+export const tailscaleLogout = () => invoke<void>('tailscale_logout');
+export const tailscaleUp = (exitNode?: string) =>
+  invoke<void>('tailscale_up', { exitNode: exitNode ?? null });
+export const tailscaleDown = () => invoke<void>('tailscale_down');
+export const tailscaleSetExitNode = (nodeIp?: string) =>
+  invoke<void>('tailscale_set_exit_node', { nodeIp: nodeIp ?? null });
+
+// Privacy — Tor
+export const torAvailable = () => invoke<boolean>('tor_available');
+export const torStatus = () => invoke<TorStatus>('tor_status');
+export const torGetMode = () => invoke<string>('tor_get_mode');
+export const torSetMode = (mode: string) => invoke<void>('tor_set_mode', { mode });
+export const torRequestBridges = (bridgeType: string) =>
+  invoke<string[]>('tor_request_bridges', { bridgeType });
+export const torGetBridges = () => invoke<string[]>('tor_get_bridges');
+export const torSetBridges = (bridges: string[]) => invoke<void>('tor_set_bridges', { bridges });
+
+// Privacy — VPN
+export const vpnListConnections = () => invoke<VpnConnection[]>('vpn_list_connections');
+export const vpnConnect = (name: string) => invoke<void>('vpn_connect', { name });
+export const vpnDisconnect = (name: string) => invoke<void>('vpn_disconnect', { name });
+export const vpnImportWireguard = (configContent: string, profileName: string) =>
+  invoke<void>('vpn_import_wireguard', { configContent, profileName });

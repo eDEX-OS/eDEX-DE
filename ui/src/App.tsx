@@ -5,6 +5,7 @@ import {
   TerminalPanel, FileList, SysinfoSidebar, SettingsModal, LauncherOverlay,
 } from './components';
 import { HyprlandConfigModal } from './components/Settings';
+import { PrivacyModal } from './components/Privacy';
 import { onToggleLauncher } from './ipc';
 import { applyThemeToCssVars } from './utils';
 import './styles/main.css';
@@ -15,6 +16,7 @@ function AppShell() {
   const [showSettings, setShowSettings] = useState(false);
   const [showLauncher, setShowLauncher] = useState(false);
   const [showHyprConfig, setShowHyprConfig] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   useEffect(() => {
     if (loaded) applyThemeToCssVars(settings.theme);
@@ -37,6 +39,10 @@ function AppShell() {
       if (e.ctrlKey && e.shiftKey && e.key === 'H') {
         e.preventDefault();
         setShowHyprConfig((v) => !v);
+      }
+      if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        setShowPrivacy((v) => !v);
       }
       if (e.altKey && e.code === 'Space') {
         e.preventDefault();
@@ -72,10 +78,11 @@ function AppShell() {
           <SysinfoSidebar />
         </div>
       </div>
-      <StatusBar />
+      <StatusBar onOpenPrivacy={() => setShowPrivacy(true)} />
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showLauncher && <LauncherOverlay onClose={() => setShowLauncher(false)} />}
       {showHyprConfig && <HyprlandConfigModal onClose={() => setShowHyprConfig(false)} />}
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
     </div>
   );
 }
