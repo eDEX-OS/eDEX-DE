@@ -1,6 +1,6 @@
 [package]
 name = "edex-ui"
-version = "0.1.0"
+version = "0.2.0"
 description = "eDEX-UI Hyprland — sci-fi DE frontend for Hyprland"
 authors = ["0xnullsect0r"]
 license = "GPL-3.0"
@@ -27,6 +27,19 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dirs = "5"
+portable-pty = "0.8"
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+futures-util = "0.3"
+uuid = { version = "1", features = ["v4"] }
+sysinfo = { version = "0.32", features = ["linux-netdevs"] }
+mime_guess = "2"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+fuzzy-matcher = "0.3"
+notify = "6"
+rodio = { version = "0.19", features = ["wav"] }
+maxminddb = "0.24"
+walkdir = "2"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
