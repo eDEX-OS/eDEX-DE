@@ -22,7 +22,7 @@
     "build": "vite build ui",
     "preview": "vite preview ui",
     "typecheck": "tsc --noEmit",
-    "tauri": "cargo tauri",
+    "tauri": "tauri",
     "tauri:dev": "cargo tauri dev",
     "tauri:build": "cargo tauri build"
   },
