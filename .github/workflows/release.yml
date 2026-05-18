@@ -183,3 +183,74 @@ jobs:
           files: artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-aur:
+    name: Publish to AUR
+    needs: create-release
+    runs-on: ubuntu-22.04
+    # Skip on forks that haven't configured the secret
+    if: ${{ secrets.AUR_SSH_PRIVATE_KEY != '' }}
+    container:
+      image: archlinux:latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: pacman -Sy --noconfirm --needed git openssh curl base-devel
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute sha256 of source tarball
+        id: sha256
+        run: |
+          URL="https://github.com/eDEX-OS/eDEX-DE/archive/refs/tags/v${{ steps.version.outputs.VERSION }}.tar.gz"
+          SUM=$(curl -fsSL "$URL" | sha256sum | cut -d' ' -f1)
+          echo "SHA256=$SUM" >> "$GITHUB_OUTPUT"
+
+      - name: Configure SSH
+        run: |
+          mkdir -p /root/.ssh
+          printf '%s\n' "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > /root/.ssh/aur
+          chmod 600 /root/.ssh/aur
+          printf 'Host aur.archlinux.org\n  IdentityFile /root/.ssh/aur\n  User aur\n  StrictHostKeyChecking no\n' \
+            >> /root/.ssh/config
+
+      - name: Configure git
+        run: |
+          git config --global user.name "eDEX-DE Release Bot"
+          git config --global user.email "edex-de@noreply.github.com"
+          git config --global init.defaultBranch master
+
+      - name: Clone AUR repository
+        run: git -c init.defaultBranch=master clone ssh://aur@aur.archlinux.org/edex-de.git /tmp/aur
+
+      - name: Update PKGBUILD
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          SHA="${{ steps.sha256.outputs.SHA256 }}"
+          cp packaging/PKGBUILD /tmp/aur/PKGBUILD
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" /tmp/aur/PKGBUILD
+          sed -i "s/^pkgrel=.*/pkgrel=1/" /tmp/aur/PKGBUILD
+          sed -i "s/sha256sums=('[^']*')/sha256sums=('${SHA}')/" /tmp/aur/PKGBUILD
+          cat /tmp/aur/PKGBUILD
+
+      - name: Generate .SRCINFO
+        run: |
+          useradd -m aurbuilder
+          cp -r /tmp/aur /home/aurbuilder/aur
+          chown -R aurbuilder:aurbuilder /home/aurbuilder/aur
+          su aurbuilder -c "cd /home/aurbuilder/aur && makepkg --printsrcinfo > .SRCINFO"
+          cp /home/aurbuilder/aur/.SRCINFO /tmp/aur/.SRCINFO
+          cat /tmp/aur/.SRCINFO
+
+      - name: Commit and push to AUR
+        working-directory: /tmp/aur
+        run: |
+          git add PKGBUILD .SRCINFO
+          git diff --cached --quiet \
+            && echo "Already up to date — nothing to push" \
+            || git commit -m "Update to v${{ steps.version.outputs.VERSION }}"
+          git push
