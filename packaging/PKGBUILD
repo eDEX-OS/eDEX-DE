@@ -1,6 +1,6 @@
 # Maintainer: eDEX-DE Contributors <https://github.com/eDEX-OS/eDEX-DE>
 pkgname=edex-de
-pkgver=1.1.3
+pkgver=1.1.4
 pkgrel=1
 pkgdesc="Sci-fi themed Wayland Desktop Environment for Hyprland"
 arch=('x86_64' 'aarch64')
@@ -11,6 +11,7 @@ depends=(
     'gtk3'
     'libayatana-appindicator'
     'hyprland'
+    'openssl'
 )
 optdepends=(
     'pipewire-pulse: audio control'
@@ -27,7 +28,6 @@ makedepends=(
     'openssl'
     'libsoup'
     'webkit2gtk-4.1'
-    'nasm'
 )
 provides=('edex-de')
 conflicts=('edex-de-git')
@@ -43,9 +43,7 @@ prepare() {
 
 build() {
     cd "eDEX-DE-${pkgver}"
-    # ring crate requires nasm or bfd linker on Arch (lld incompatible without nasm)
     export CARGO_INCREMENTAL=0
-    export RUSTFLAGS="${RUSTFLAGS} -C link-arg=-fuse-ld=bfd"
     npm run tauri -- build --no-bundle
 }
 

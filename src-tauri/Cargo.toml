@@ -1,6 +1,6 @@
 [package]
 name = "edex-de"
-version = "1.1.3"
+version = "1.1.4"
 description = "eDEX-DE — sci-fi desktop environment frontend for Hyprland"
 authors = ["eDEX-OS"]
 license = "GPL-3.0"
@@ -34,7 +34,7 @@ futures-util = "0.3"
 uuid = { version = "1", features = ["v4"] }
 sysinfo = { version = "0.32", features = ["linux-netdevs"] }
 mime_guess = "2"
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", features = ["json", "native-tls"], default-features = false }
 fuzzy-matcher = "0.3"
 notify = "6"
 rodio = { version = "0.19", features = ["wav"] }
