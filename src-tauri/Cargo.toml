@@ -1,6 +1,6 @@
 [package]
 name = "edex-ui"
-version = "0.2.0"
+version = "0.3.0"
 description = "eDEX-UI Hyprland — sci-fi DE frontend for Hyprland"
 authors = ["0xnullsect0r"]
 license = "GPL-3.0"
