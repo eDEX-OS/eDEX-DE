@@ -120,3 +120,78 @@ export const hyprDispatch = (action: string) => invoke<string>('hypr_dispatch', 
 export const generateHyprlandConfig = () => invoke<string>('generate_hyprland_config');
 export const onHyprlandEvent = (cb: (event: { event: string; data: string }) => void) =>
   listen<{ event: string; data: string }>('hyprland-event', (e) => cb(e.payload));
+
+// Audio / PipeWire
+export interface AudioSink {
+  index: number;
+  name: string;
+  description: string;
+  volumePercent: number;
+  muted: boolean;
+  isDefault: boolean;
+}
+export const audioAvailable = () => invoke<boolean>('audio_available');
+export const listAudioSinks = () => invoke<AudioSink[]>('list_audio_sinks');
+export const getMasterVolume = () => invoke<number>('get_master_volume');
+export const setMasterVolume = (percent: number) => invoke<void>('set_master_volume', { percent });
+export const toggleMute = () => invoke<boolean>('toggle_mute');
+export const setDefaultSink = (sinkName: string) => invoke<void>('set_default_sink', { sinkName });
+
+// NetworkManager
+export interface NetworkConnection {
+  name: string;
+  uuid: string;
+  connType: string;
+  device: string;
+  active: boolean;
+  state: string;
+}
+export interface WifiNetwork {
+  ssid: string;
+  bssid: string;
+  signal: number;
+  security: string;
+  inUse: boolean;
+  freq: string;
+}
+export const networkAvailable = () => invoke<boolean>('network_available');
+export const listConnections = () => invoke<NetworkConnection[]>('list_connections');
+export const wifiScan = () => invoke<WifiNetwork[]>('wifi_scan');
+export const wifiConnect = (ssid: string, password?: string) =>
+  invoke<void>('wifi_connect', { ssid, password: password ?? null });
+export const nmDisconnect = (device: string) => invoke<void>('nm_disconnect', { device });
+export const getActiveConnectionInfo = () => invoke<Record<string, string>>('get_active_connection_info');
+
+// fprintd
+export interface FprintdStatus {
+  available: boolean;
+  hasEnrolledFingers: boolean;
+  deviceName?: string;
+}
+export interface VerifyResult {
+  success: boolean;
+  message: string;
+}
+export const getFprintdStatus = () => invoke<FprintdStatus>('fprintd_status');
+export const fprintdVerify = () => invoke<VerifyResult>('fprintd_verify');
+export const onFprintdStatus = (cb: (status: string) => void) =>
+  listen<string>('fprintd-status', (e) => cb(e.payload));
+
+// systemd
+export interface SystemdUnit {
+  name: string;
+  loadState: string;
+  activeState: string;
+  subState: string;
+  description: string;
+  unitType: string;
+  enabled?: boolean;
+}
+export const listUnits = (userUnits: boolean, unitTypeFilter?: string) =>
+  invoke<SystemdUnit[]>('list_units', { userUnits, unitTypeFilter: unitTypeFilter ?? null });
+export const unitAction = (unit: string, action: string, userUnits: boolean) =>
+  invoke<string>('unit_action', { unit, action, userUnits });
+export const getUnitLogs = (unit: string, lines?: number) =>
+  invoke<string>('get_unit_logs', { unit, lines: lines ?? 50 });
+export const getUnitStatus = (unit: string, userUnits: boolean) =>
+  invoke<string>('get_unit_status', { unit, userUnits });

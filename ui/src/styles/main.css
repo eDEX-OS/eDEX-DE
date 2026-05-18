@@ -434,3 +434,65 @@ html, body, #app {
 }
 
 .launcher-hint { margin-left: auto; color: var(--color-accent); }
+
+/* ── Service Manager ─────────────────────────── */
+.service-manager { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.svc-toolbar { display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-bottom: 1px solid var(--color-border); flex-shrink: 0; flex-wrap: wrap; }
+.svc-scope-tabs { display: flex; }
+.svc-tab { background: none; border: 1px solid var(--color-border); color: var(--color-fg-muted); font-family: var(--font-mono); font-size: 9px; padding: 3px 7px; cursor: pointer; }
+.svc-tab.active { background: rgba(0,229,255,0.1); border-color: var(--color-accent); color: var(--color-accent); }
+.svc-tab:first-child { border-radius: 2px 0 0 2px; }
+.svc-tab:last-child { border-radius: 0 2px 2px 0; }
+.svc-type-select { background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-fg-muted); font-family: var(--font-mono); font-size: 9px; padding: 2px 4px; }
+.svc-search { flex: 1; min-width: 60px; background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-fg); font-family: var(--font-mono); font-size: 10px; padding: 3px 6px; }
+.svc-refresh { background: none; border: none; color: var(--color-accent); cursor: pointer; font-size: 14px; }
+.svc-action-msg { padding: 4px 8px; font-size: 10px; color: var(--color-secondary); background: rgba(0,255,136,0.08); border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
+.svc-list { flex: 1; overflow-y: auto; }
+.svc-loading, .svc-empty { padding: 16px; text-align: center; color: var(--color-fg-muted); font-size: 11px; }
+.svc-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; cursor: pointer; border-left: 2px solid transparent; }
+.svc-row:hover { background: rgba(0,229,255,0.04); }
+.svc-row.selected { background: rgba(0,229,255,0.07); border-left-color: var(--color-accent); }
+.svc-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.svc-info { flex: 1; min-width: 0; }
+.svc-name { font-size: 10px; color: var(--color-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.svc-desc { font-size: 9px; color: var(--color-fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.svc-states { display: flex; flex-direction: column; align-items: flex-end; font-size: 9px; flex-shrink: 0; }
+.svc-state { font-weight: bold; }
+.svc-substate { color: var(--color-fg-muted); }
+.svc-actions { display: flex; gap: 3px; flex-shrink: 0; }
+.svc-btn { background: none; border: 1px solid var(--color-border); color: var(--color-fg-muted); cursor: pointer; padding: 2px 5px; font-size: 11px; font-family: var(--font-mono); transition: all var(--transition-fast); }
+.svc-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.svc-btn.start:hover { border-color: var(--color-success); color: var(--color-success); }
+.svc-btn.stop:hover { border-color: var(--color-error); color: var(--color-error); }
+.svc-btn.restart:hover { border-color: var(--color-warning); color: var(--color-warning); }
+.svc-logs { flex-shrink: 0; max-height: 200px; border-top: 1px solid var(--color-border); display: flex; flex-direction: column; }
+.svc-logs-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; background: var(--color-bg); border-bottom: 1px solid var(--color-border); }
+.svc-logs-title { font-size: 9px; color: var(--color-accent); letter-spacing: 1px; }
+.svc-logs-close { background: none; border: none; color: var(--color-fg-muted); cursor: pointer; font-size: 14px; }
+.svc-logs-content { flex: 1; overflow-y: auto; padding: 6px 8px; font-size: 9px; color: var(--color-secondary); white-space: pre-wrap; line-height: 1.4; }
+
+/* ── Network Panel ───────────────────────────── */
+.network-panel { padding: 8px; }
+.net-active-info { background: rgba(0,229,255,0.06); border: 1px solid var(--color-border); padding: 6px 8px; margin-bottom: 4px; }
+.net-active-name { font-size: 11px; color: var(--color-accent); }
+.net-active-ip { font-size: 10px; color: var(--color-fg-muted); }
+.net-conn-list { margin-top: 6px; display: flex; flex-direction: column; gap: 2px; }
+.net-conn { display: flex; align-items: center; gap: 6px; padding: 4px 6px; font-size: 10px; border: 1px solid transparent; }
+.net-conn.active { border-color: var(--color-border); background: rgba(0,229,255,0.05); }
+.net-conn-name { flex: 1; color: var(--color-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.net-conn-type { font-size: 9px; color: var(--color-fg-muted); }
+.net-wifi-list { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+.net-wifi-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; }
+.net-wifi-row.in-use { background: rgba(0,255,136,0.05); border: 1px solid var(--color-border); }
+.net-wifi-info { flex: 1; min-width: 0; }
+.net-wifi-ssid { font-size: 11px; color: var(--color-fg); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.net-wifi-signal { height: 3px; background: var(--color-border); margin-top: 2px; width: 100%; }
+.signal-bar { height: 100%; transition: width 400ms ease; }
+.net-wifi-connect { display: flex; gap: 4px; align-items: center; }
+
+/* ── Volume Control ──────────────────────────── */
+.status-volume { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.vol-mute { background: none; border: none; cursor: pointer; font-size: 12px; padding: 0; }
+.vol-slider { -webkit-appearance: none; appearance: none; width: 70px; height: 3px; background: var(--color-border); outline: none; cursor: pointer; }
+.vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--color-accent); cursor: pointer; }
+.vol-value { font-size: 10px; color: var(--color-fg-muted); min-width: 30px; }

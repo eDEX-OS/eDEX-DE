@@ -4,8 +4,12 @@ pub mod terminal;
 pub mod filesystem;
 pub mod sysinfo;
 pub mod audio;
+pub mod audio_control;
 pub mod launcher;
 pub mod hyprland;
+pub mod network;
+pub mod fingerprint;
+pub mod systemd;
 pub mod update_checker;
 
 #[allow(unused_imports)]
@@ -21,11 +25,19 @@ pub use sysinfo::{get_battery_info, get_cpu_info, get_disk_info, get_net_stats, 
 #[allow(unused_imports)]
 pub use audio::play_audio;
 #[allow(unused_imports)]
+pub use audio_control::{audio_available, get_master_volume, list_audio_sinks, set_default_sink, set_master_volume, toggle_mute};
+#[allow(unused_imports)]
 pub use launcher::{get_hyprland_launcher_bind, launch_app, list_apps, search_apps};
 #[allow(unused_imports)]
 pub use hyprland::{
     generate_hyprland_config, get_active_window, get_hyprland_status, get_monitors,
     get_workspaces, hypr_dispatch, switch_workspace,
 };
+#[allow(unused_imports)]
+pub use network::{get_active_connection_info, list_connections, network_available, nm_disconnect, wifi_connect, wifi_scan};
+#[allow(unused_imports)]
+pub use fingerprint::{fprintd_status, fprintd_verify};
+#[allow(unused_imports)]
+pub use systemd::{get_unit_logs, get_unit_status, list_units, unit_action};
 #[allow(unused_imports)]
 pub use update_checker::check_for_update;

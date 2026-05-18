@@ -1,6 +1,6 @@
 {
   "productName": "eDEX-DE",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "identifier": "io.edex.de",
   "build": {
     "beforeDevCommand": "npm run dev",
