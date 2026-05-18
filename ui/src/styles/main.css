@@ -1,56 +1,128 @@
+/* eDEX-UI Hyprland — Base Styles */
 :root {
-  --color-bg: #0a0c0f;
-  --color-surface: #111820;
+  --color-bg: #0a0c10;
+  --color-bg-panel: #0d1117;
+  --color-bg-overlay: rgba(10, 12, 16, 0.95);
+  --color-fg: #e0e8f0;
+  --color-fg-muted: #6e7f8d;
   --color-accent: #00e5ff;
-  --color-accent-alt: #00ff88;
-  --color-text: #e0e8f0;
-  --color-muted: #556070;
-  --font-mono: "Share Tech Mono", "JetBrains Mono", monospace;
+  --color-secondary: #00ff88;
+  --color-error: #ff3366;
+  --color-warning: #ffcc00;
+  --color-success: #00ff88;
+  --color-border: #1a2535;
+  --color-border-active: #00e5ff;
+  --font-mono: 'Share Tech Mono', 'Fira Code', 'Courier New', monospace;
+  --font-sans: 'Share Tech', 'Roboto Mono', sans-serif;
+  --topbar-height: 36px;
+  --statusbar-height: 28px;
+  --border-width: 1px;
+  --transition-fast: 80ms ease;
+  --transition-med: 160ms ease;
+  --glow-accent: 0 0 8px rgba(0, 229, 255, 0.4);
+  --glow-secondary: 0 0 8px rgba(0, 255, 136, 0.4);
+  --glow-error: 0 0 8px rgba(255, 51, 102, 0.4);
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
+html, body, #app {
+  width: 100vw; height: 100vh; overflow: hidden;
   background: var(--color-bg);
-  color: var(--color-text);
+  color: var(--color-fg);
   font-family: var(--font-mono);
-  overflow: hidden;
-  width: 100vw;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout ─────────────────────────────────── */
+.app-layout {
+  display: grid;
+  grid-template-rows: var(--topbar-height) 1fr var(--statusbar-height);
   height: 100vh;
 }
 
-.edex-root {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.app-body {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  overflow: hidden;
 }
 
+.panel {
+  background: var(--color-bg-panel);
+  border: var(--border-width) solid var(--color-border);
+  overflow: hidden;
+  position: relative;
+}
+
+.panel-left { border-left: none; border-top: none; border-bottom: none; }
+.panel-right { border-right: none; border-top: none; border-bottom: none; }
+.panel-center { border: none; }
+
+/* ── Top Bar ─────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+  height: var(--topbar-height);
+  background: var(--color-bg-panel);
+  border-bottom: var(--border-width) solid var(--color-border);
+  z-index: 100;
+}
+
+.topbar-brand { color: var(--color-accent); font-weight: 700; letter-spacing: 2px; font-size: 14px; }
+.topbar-separator { margin: 0 8px; color: var(--color-fg-muted); font-size: 8px; }
+.topbar-hostname { color: var(--color-secondary); font-size: 12px; letter-spacing: 1px; }
+.topbar-time { color: var(--color-accent); font-size: 16px; letter-spacing: 3px; font-weight: 700; }
+.topbar-date { color: var(--color-fg-muted); font-size: 11px; }
+
+/* ── Status Bar ──────────────────────────────── */
+.statusbar {
+  display: flex; align-items: center; gap: 16px; padding: 0 16px;
+  height: var(--statusbar-height);
+  background: var(--color-bg-panel);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.status-item { color: var(--color-fg-muted); font-size: 11px; }
+.status-item strong { color: var(--color-accent); }
+
+/* ── Boot Screen ─────────────────────────────── */
 .boot-screen {
-  text-align: center;
-  padding: 2rem;
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--color-bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 32px;
 }
 
-.ascii-logo {
+.boot-logo {
+  font-size: 48px; font-weight: 900; letter-spacing: 12px;
   color: var(--color-accent);
-  font-size: 0.75rem;
-  line-height: 1.4;
-  margin-bottom: 2rem;
-  text-shadow: 0 0 10px var(--color-accent);
+  text-shadow: var(--glow-accent);
 }
 
-.status {
-  color: var(--color-accent-alt);
-  font-size: 1rem;
-  margin-bottom: 0.5rem;
-}
+.boot-lines { display: flex; flex-direction: column; gap: 4px; text-align: left; min-width: 400px; }
+.boot-line { color: var(--color-secondary); font-size: 13px; animation: fade-in 200ms ease; }
 
-.version {
-  color: var(--color-muted);
-  font-size: 0.8rem;
+@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ── Placeholder ─────────────────────────────── */
+.panel-placeholder {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; gap: 8px;
+  color: var(--color-fg-muted);
 }
+.placeholder-label { font-size: 14px; color: var(--color-accent); letter-spacing: 2px; text-transform: uppercase; }
+.placeholder-desc { font-size: 11px; }
+
+/* ── Scrollbars ──────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent); }
+
+/* ── Focus ring ──────────────────────────────── */
+:focus-visible { outline: 1px solid var(--color-accent); outline-offset: 2px; }
+
+/* ── Utility ─────────────────────────────────── */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }

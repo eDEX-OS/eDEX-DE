@@ -1,27 +1,49 @@
-import { useState, useEffect } from "preact/hooks";
-import { invoke } from "@tauri-apps/api/core";
+import { useCallback, useEffect, useState } from 'preact/hooks';
+import { SettingsProvider, SysinfoProvider, useSettings } from './context';
+import { BootScreen, TopBar, StatusBar, Placeholder } from './components';
+import { applyThemeToCssVars } from './utils';
+import './styles/main.css';
 
-export function App() {
-  const [greeting, setGreeting] = useState<string>("Initializing eDEX-UI...");
+function AppShell() {
+  const { settings, loaded } = useSettings();
+  const [booted, setBooted] = useState(false);
+  const handleBootComplete = useCallback(() => setBooted(true), []);
 
   useEffect(() => {
-    invoke<string>("greet", { name: "Hyprland" }).then(setGreeting).catch(console.error);
-  }, []);
+    if (loaded) {
+      applyThemeToCssVars(settings.theme);
+    }
+  }, [loaded, settings.theme]);
+
+  if (!loaded || !booted) {
+    return <BootScreen onComplete={handleBootComplete} skip={!loaded ? false : settings.nointro} />;
+  }
 
   return (
-    <div class="edex-root">
-      <div class="boot-screen">
-        <pre class="ascii-logo">{`
- _____  _______  __       __      __  __
-|  ___|  ___   \\ \\ \\     / /     /  |/  |
-| |__  | |  | |  \\ \\   / /     / /|  / |
-|  __| | |  | |   \\ \\ / /     / / | / / 
-| |___ | |__| |    \\   /     / /  |/ /  
-|_____|\\______/      \\_/     /_/      /   
-`}</pre>
-        <p class="status">{greeting}</p>
-        <p class="version">eDEX-UI Hyprland v0.1.0 — Tauri + Rust + Preact</p>
+    <div class="app-layout">
+      <TopBar />
+      <div class="app-body">
+        <div class="panel panel-left">
+          <Placeholder label="Filesystem" description="Phase 4" />
+        </div>
+        <div class="panel panel-center">
+          <Placeholder label="Terminal" description="Phase 4" />
+        </div>
+        <div class="panel panel-right">
+          <Placeholder label="Sysinfo" description="Phase 4" />
+        </div>
       </div>
+      <StatusBar />
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <SettingsProvider>
+      <SysinfoProvider>
+        <AppShell />
+      </SysinfoProvider>
+    </SettingsProvider>
   );
 }
