@@ -1,0 +1,56 @@
+:root {
+  --color-bg: #0a0c0f;
+  --color-surface: #111820;
+  --color-accent: #00e5ff;
+  --color-accent-alt: #00ff88;
+  --color-text: #e0e8f0;
+  --color-muted: #556070;
+  --font-mono: "Share Tech Mono", "JetBrains Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+.edex-root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.boot-screen {
+  text-align: center;
+  padding: 2rem;
+}
+
+.ascii-logo {
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin-bottom: 2rem;
+  text-shadow: 0 0 10px var(--color-accent);
+}
+
+.status {
+  color: var(--color-accent-alt);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.version {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+}

@@ -1,114 +1,42 @@
 {
-  "name": "edex-ui",
-  "productName": "eDEX-UI",
-  "version": "2.2.8",
-  "description": "A science fiction desktop running everywhere. Awesome.",
-  "keywords": [
-    "desktop",
-    "sci-fi",
-    "gui",
-    "portable",
-    "tty",
-    "terminal"
-  ],
-  "main": "src/_boot.js",
-  "scripts": {
-    "start": "electron src --nointro",
-    "install-linux": "npm install && cd src && npm install && ./../node_modules/.bin/electron-rebuild -f -w node-pty && cd ..",
-    "preinstall-windows": "npm install --global --production windows-build-tools && npm install --global node-gyp && setx PYTHON \"%USERPROFILE%\\.windows-build-tools\\python27\\python.exe\"",
-    "install-windows": "npm install && cd src && npm install && ..\\node_modules\\.bin\\electron-rebuild -f -w node-pty && cd ..",
-    "prebuild-linux": "rsync -a --info=progress2 src/ prebuild-src --exclude node_modules && node prebuild-minify.js && cd prebuild-src && npm install",
-    "prebuild-darwin": "rsync -a src/ prebuild-src --exclude node_modules && node prebuild-minify.js && cd prebuild-src && npm install",
-    "prebuild-windows": "mkdir prebuild-src && xcopy src\\* prebuild-src\\ /E /C /Q /Y && node prebuild-minify.js && cd prebuild-src && npm install",
-    "build-linux": "./node_modules/.bin/electron-builder build -l --x64 --ia32 --arm64 --armv7l",
-    "build-darwin": "./node_modules/.bin/electron-builder build -m",
-    "build-windows": "node_modules\\.bin\\electron-builder build -w",
-    "postbuild-linux": "rm -R prebuild-src",
-    "postbuild-darwin": "rm -R prebuild-src",
-    "postbuild-windows": "rmdir /S /Q prebuild-src",
-    "test": "rsync -a --info=progress2 src/ prebuild-src --exclude node_modules && node prebuild-minify.js && cd prebuild-src && npm install && snyk test && cd .. && rm -R prebuild-src",
-    "init-file-icons": "git submodule update --init",
-    "update-file-icons": "git submodule foreach git pull origin master && node file-icons-generator.js"
-  },
+  "name": "edex-ui-hyprland",
+  "version": "0.1.0",
+  "description": "eDEX-UI Hyprland — sci-fi DE frontend for Hyprland, built with Tauri + Rust + TypeScript + Preact",
+  "keywords": ["desktop", "sci-fi", "wayland", "hyprland", "tauri", "tiling-wm", "de"],
+  "license": "GPL-3.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GitSquared/edex-ui.git"
+    "url": "git+https://github.com/0xnullsect0r/edex-ui-hyprland.git"
   },
-  "author": "Gabriel 'Squared' SAILLARD <gabriel@saillard.dev> (https://gaby.dev)",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/GitSquared/edex-ui/issues"
-  },
-  "homepage": "https://github.com/GitSquared/edex-ui#readme",
-  "build": {
-    "appId": "com.edex.ui",
-    "productName": "eDEX-UI",
-    "publish": "github",
-    "asar": true,
-    "compression": "normal",
-    "copyright": "Copyright © 2017-2021 Gabriel 'Squared' SAILLARD <gabriel@saillard.dev> (https://gaby.dev)",
-    "directories": {
-      "output": "dist",
-      "app": "prebuild-src"
-    },
-    "forceCodeSigning": false,
-    "npmRebuild": true,
-    "artifactName": "eDEX-UI-${os}-${arch}.${ext}",
-    "linux": {
-      "target": [
-        "AppImage"
-      ],
-      "category": "System",
-      "icon": "media/linuxIcons"
-    },
-    "appImage": {
-      "artifactName": "eDEX-UI-Linux-${arch}.AppImage"
-    },
-    "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "category": "public.app-category.utilities",
-      "icon": "media/icon.icns"
-    },
-    "dmg": {
-      "artifactName": "eDEX-UI-macOS-${arch}.dmg"
-    },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "ia32"
-          ]
-        }
-      ],
-      "icon": "media/icon.ico"
-    },
-    "nsis": {
-      "artifactName": "eDEX-UI-Windows-${arch}.exe",
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": true
-    }
+  "author": "0xnullsect0r",
+  "scripts": {
+    "dev": "vite ui",
+    "build": "vite build ui",
+    "preview": "vite preview ui",
+    "typecheck": "tsc --noEmit",
+    "tauri": "cargo tauri",
+    "tauri:dev": "cargo tauri dev",
+    "tauri:build": "cargo tauri build"
   },
   "dependencies": {
-    "clean-css": "5.2.1",
-    "electron": "^12.1.0",
-    "electron-builder": "^22.14.5",
-    "electron-rebuild": "^2.3.5",
-    "mime-types": "^2.1.33",
-    "node-abi": "2.30.1",
-    "node-json-minify": "1.0.0",
-    "terser": "^5.9.0"
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2",
+    "@tauri-apps/plugin-fs": "^2",
+    "@tauri-apps/plugin-notification": "^2",
+    "@tauri-apps/plugin-shell": "^2",
+    "@tauri-apps/plugin-global-shortcut": "^2",
+    "preact": "^10.25.0",
+    "xterm": "^5.3.0",
+    "@xterm/addon-attach": "^0.11.0",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-ligatures": "^0.8.0",
+    "@xterm/addon-webgl": "^0.18.0",
+    "smoothie": "^1.36.0"
   },
-  "optionalDependencies": {
-    "cson-parser": "4.0.9"
+  "devDependencies": {
+    "@preact/preset-vite": "^2.8.1",
+    "@tauri-apps/cli": "^2",
+    "typescript": "^5.4.0",
+    "vite": "^5.4.0"
   }
 }
