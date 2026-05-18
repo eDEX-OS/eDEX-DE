@@ -48,8 +48,6 @@ jobs:
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "src-tauri -> target"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -71,13 +69,13 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       - name: List build artifacts
-        run: find src-tauri/target/release/bundle -type f | sort
+        run: find target/release/bundle -type f | sort
 
       - name: Collect artifacts
         id: artifacts
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
-          BUNDLE_DIR="src-tauri/target/release/bundle"
+          BUNDLE_DIR="target/release/bundle"
 
           DEB=$(find "$BUNDLE_DIR/deb" -name "*.deb" 2>/dev/null | head -1)
           RPM=$(find "$BUNDLE_DIR/rpm" -name "*.rpm" 2>/dev/null | head -1)
@@ -104,7 +102,7 @@ jobs:
             *.deb
             *.rpm
             *.AppImage
-          if-no-files-found: warn
+          if-no-files-found: error
 
   create-release:
     name: Create GitHub Release
