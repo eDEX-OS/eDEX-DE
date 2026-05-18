@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=eDEX-DE
+GenericName=Desktop Environment
+Comment=Sci-fi themed Wayland Desktop Environment for Hyprland
+Exec=edex-de
+Icon=edex-de
+Terminal=false
+Type=Application
+Categories=System;Utility;
+Keywords=terminal;desktop;hyprland;wayland;sci-fi;
+StartupNotify=true
+StartupWMClass=edex-de
+X-GNOME-SingleWindow=true

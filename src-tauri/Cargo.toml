@@ -1,10 +1,10 @@
 [package]
 name = "edex-de"
-version = "0.8.0"
+version = "0.9.0"
 description = "eDEX-DE — sci-fi desktop environment frontend for Hyprland"
-authors = ["0xnullsect0r"]
+authors = ["eDEX-OS"]
 license = "GPL-3.0"
-repository = "https://github.com/0xnullsect0r/edex-ui-hyprland"
+repository = "https://github.com/eDEX-OS/eDEX-DE"
 edition = "2021"
 rust-version = "1.77.2"
 

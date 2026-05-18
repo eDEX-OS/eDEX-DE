@@ -18,7 +18,7 @@ pub async fn check_for_update(current_version: String) -> Result<UpdateInfo, Str
         .map_err(|e| e.to_string())?;
 
     let response: serde_json::Value = client
-        .get("https://api.github.com/repos/0xnullsect0r/eDEX-DE/releases/latest")
+        .get("https://api.github.com/repos/eDEX-OS/eDEX-DE/releases/latest")
         .send()
         .await
         .map_err(|e| e.to_string())?
