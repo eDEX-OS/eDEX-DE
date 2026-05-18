@@ -28,25 +28,6 @@
 
 ---
 
-## Version Roadmap
-
-| Version | Status | Description |
-|---------|--------|-------------|
-| v0.1.0 | ✅ Released | Tauri v2 bootstrap — Rust backend, Preact/Vite frontend, eDEX branding |
-| v0.2.0 | ✅ Released | Rust backend core — PTY terminal server, sysinfo, filesystem commands |
-| v0.3.0 | ✅ Released | TypeScript/Preact foundation — types, IPC wrappers, theme/settings context |
-| v0.4.0 | ✅ Released | Full UI port — Terminal, FileSystem, SysInfo, StatusBar, TopBar, all components |
-| v0.5.0 | ✅ Released | App Launcher — fuzzy .desktop search, Alt+Space / Meta hotkey, shell/math mode |
-| v0.6.0 | ✅ Released | Hyprland IPC — window list, workspace switcher, config editor, event streaming |
-| v0.7.0 | ✅ Released | System integrations — PipeWire audio, NetworkManager, fprintd, systemd service manager |
-| v0.8.0 | ✅ Released | Wayland layer shell — fullscreen/nodecor window config, Hyprland window rules |
-| v0.9.0 | ✅ Released | Packaging — .deb, .rpm, PKGBUILD, universal installer script |
-| v0.10.0 | ✅ Released | CI/CD — GitHub Actions CI on push/PR, release workflow on vX.Y.Z tag |
-| v0.12.0 | ✅ Released | Integration polish — animated boot screen, graceful degradation, dependency docs |
-| v0.13.0 | ✅ Released | Documentation — comprehensive README, GitHub Pages site |
-
----
-
 ## Repository Structure
 
 ```
