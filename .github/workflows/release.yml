@@ -188,8 +188,6 @@ jobs:
     name: Publish to AUR
     needs: create-release
     runs-on: ubuntu-22.04
-    # Skip on forks that haven't configured the secret
-    if: ${{ secrets.AUR_SSH_PRIVATE_KEY != '' }}
     container:
       image: archlinux:latest
 
