@@ -8,51 +8,102 @@ import {
 } from '../../ipc';
 import type { NetworkConnection, WifiNetwork } from '../../ipc';
 
+const NETWORK_UNAVAILABLE_MESSAGE = 'NetworkManager not available — install network-manager / nmcli to enable WIFI controls.';
+
+function formatNetworkError(error: unknown) {
+  const message = String(error);
+
+  if (message.includes('nmcli not found') || message.includes('No such file or directory')) {
+    return NETWORK_UNAVAILABLE_MESSAGE;
+  }
+
+  return `NetworkManager unavailable — ${message}`;
+}
+
 export function NetworkPanel() {
   const [available, setAvailable] = useState(false);
   const [connections, setConnections] = useState<NetworkConnection[]>([]);
   const [wifiNetworks, setWifiNetworks] = useState<WifiNetwork[]>([]);
   const [activeInfo, setActiveInfo] = useState<Record<string, string>>({});
+  const [statusMessage, setStatusMessage] = useState<string>(NETWORK_UNAVAILABLE_MESSAGE);
   const [scanning, setScanning] = useState(false);
   const [tab, setTab] = useState<'connections' | 'wifi'>('connections');
   const [connectSsid, setConnectSsid] = useState<string | null>(null);
   const [connectPw, setConnectPw] = useState('');
 
   const refreshConnections = useCallback(() => {
-    listConnections().then(setConnections).catch(console.error);
-    getActiveConnectionInfo().then(setActiveInfo).catch(console.error);
+    Promise.all([listConnections(), getActiveConnectionInfo()])
+      .then(([nextConnections, info]) => {
+        setConnections(nextConnections);
+        setActiveInfo(info);
+        setStatusMessage('');
+      })
+      .catch((error) => {
+        console.error(error);
+        setAvailable(false);
+        setConnections([]);
+        setActiveInfo({});
+        setStatusMessage(formatNetworkError(error));
+      });
   }, []);
 
   useEffect(() => {
-    networkAvailable().then((isAvailable) => {
-      setAvailable(isAvailable);
-      if (isAvailable) {
-        refreshConnections();
-      }
-    });
+    networkAvailable()
+      .then((isAvailable) => {
+        setAvailable(isAvailable);
+        if (isAvailable) {
+          setStatusMessage('');
+          refreshConnections();
+          return;
+        }
+
+        setStatusMessage(NETWORK_UNAVAILABLE_MESSAGE);
+      })
+      .catch((error) => {
+        console.error(error);
+        setAvailable(false);
+        setStatusMessage(formatNetworkError(error));
+      });
   }, [refreshConnections]);
 
   const scanWifiNetworks = useCallback(() => {
     setScanning(true);
     wifiScan()
-      .then(setWifiNetworks)
-      .catch(console.error)
+      .then((networks) => {
+        setWifiNetworks(networks);
+        setStatusMessage('');
+      })
+      .catch((error) => {
+        console.error(error);
+        setAvailable(false);
+        setStatusMessage(formatNetworkError(error));
+      })
       .finally(() => setScanning(false));
   }, []);
 
   const handleConnect = async (ssid: string) => {
-    await wifiConnect(ssid, connectPw || undefined).catch(console.error);
-    setConnectSsid(null);
-    setConnectPw('');
-    refreshConnections();
-    scanWifiNetworks();
+    try {
+      await wifiConnect(ssid, connectPw || undefined);
+      setConnectSsid(null);
+      setConnectPw('');
+      setStatusMessage('');
+      refreshConnections();
+      scanWifiNetworks();
+    } catch (error) {
+      console.error(error);
+      setStatusMessage(formatNetworkError(error));
+    }
   };
 
   if (!available) {
     return (
       <div class="sysinfo-panel net-panel">
         <div class="sysinfo-header">NETWORK</div>
-        <div class="sysinfo-loading">NetworkManager not available</div>
+        <div class="sysinfo-unavailable">
+          <div class="sysinfo-unavailable-title">WIFI BACKEND OFFLINE</div>
+          <div class="sysinfo-unavailable-message">{statusMessage}</div>
+          <div class="sysinfo-unavailable-hint">Install and start NetworkManager to populate saved connections and Wi-Fi scans.</div>
+        </div>
       </div>
     );
   }
@@ -66,6 +117,7 @@ export function NetworkPanel() {
           <div class="net-active-ip">{activeInfo.ipv4 || 'No IP'}</div>
         </div>
       )}
+      {!!statusMessage && <div class="sysinfo-inline-status">{statusMessage}</div>}
       <div class="sysinfo-tabs" style={{ marginTop: '8px' }}>
         <button class={`sysinfo-tab ${tab === 'connections' ? 'active' : ''}`} onClick={() => setTab('connections')}>
           SAVED
@@ -85,6 +137,7 @@ export function NetworkPanel() {
 
       {tab === 'connections' && (
         <div class="net-conn-list">
+          {connections.length === 0 && <div class="svc-empty">No saved NetworkManager profiles detected.</div>}
           {connections.map((connection) => (
             <div key={connection.uuid} class={`net-conn ${connection.active ? 'active' : ''}`}>
               <span class="net-conn-name">{connection.name}</span>
@@ -110,6 +163,9 @@ export function NetworkPanel() {
           >
             {scanning ? 'Scanning...' : 'Scan'}
           </button>
+          {!scanning && wifiNetworks.length === 0 && (
+            <div class="svc-empty">No Wi-Fi networks detected yet. Trigger a scan to refresh nearby access points.</div>
+          )}
           {wifiNetworks.map((network) => (
             <div key={network.ssid} class={`net-wifi-row ${network.inUse ? 'in-use' : ''}`}>
               <div class="net-wifi-info">

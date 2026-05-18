@@ -499,3 +499,121 @@ html, body, #app {
 .vol-slider { -webkit-appearance: none; appearance: none; width: 70px; height: 3px; background: var(--color-border); outline: none; cursor: pointer; }
 .vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--color-accent); cursor: pointer; }
 .vol-value { font-size: 10px; color: var(--color-fg-muted); min-width: 30px; }
+
+/* ── Phase 11 Boot Polish ────────────────────── */
+.boot-screen {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(0, 229, 255, 0.12), transparent 45%),
+    linear-gradient(180deg, rgba(0, 229, 255, 0.04), transparent 35%),
+    var(--color-bg);
+}
+
+.boot-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02) 0,
+    rgba(255, 255, 255, 0.02) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.boot-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 160px;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 229, 255, 0.2) 45%, transparent 100%);
+  filter: blur(10px);
+  opacity: 0.7;
+  pointer-events: none;
+  animation: boot-scan 2.8s linear infinite;
+}
+
+.boot-logo {
+  display: inline-flex;
+  gap: 2px;
+  position: relative;
+  z-index: 1;
+}
+
+.boot-logo-char {
+  display: inline-block;
+  opacity: 0;
+  animation: char-reveal 0.12s forwards;
+}
+
+.boot-lines {
+  position: relative;
+  z-index: 1;
+}
+
+.boot-line {
+  opacity: 0;
+  animation: fade-in 200ms ease forwards;
+}
+
+.sysinfo-unavailable {
+  margin: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  background: rgba(0, 229, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sysinfo-unavailable-title {
+  color: var(--color-accent);
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.sysinfo-unavailable-message {
+  color: var(--color-fg);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.sysinfo-unavailable-hint,
+.sysinfo-inline-status {
+  color: var(--color-fg-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.sysinfo-inline-status {
+  margin-top: 8px;
+}
+
+.svc-unavailable {
+  margin: 0;
+  height: 100%;
+  justify-content: center;
+}
+
+@keyframes char-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes boot-scan {
+  from {
+    transform: translateY(-140%);
+  }
+  to {
+    transform: translateY(140%);
+  }
+}

@@ -1,6 +1,6 @@
 [package]
 name = "edex-de"
-version = "0.10.0"
+version = "0.12.0"
 description = "eDEX-DE — sci-fi desktop environment frontend for Hyprland"
 authors = ["eDEX-OS"]
 license = "GPL-3.0"
