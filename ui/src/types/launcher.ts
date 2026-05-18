@@ -2,7 +2,8 @@ export interface AppEntry {
   name: string;
   exec: string;
   icon?: string;
-  categories?: string[];
+  categories: string[];
   comment?: string;
-  desktopFile?: string;
+  desktopFile: string;
+  keywords: string[];
 }

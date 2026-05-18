@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import type {
   Settings,
   Shortcut,
@@ -11,6 +12,7 @@ import type {
   BatteryInfo,
   FileEntry,
   FuzzyMatch,
+  AppEntry,
 } from '../types';
 
 // Settings
@@ -56,3 +58,12 @@ export const checkForUpdate = (currentVersion: string) =>
     'check_for_update',
     { currentVersion },
   );
+
+// Launcher
+export const listApps = () => invoke<AppEntry[]>('list_apps');
+export const searchApps = (query: string) =>
+  invoke<{ app: AppEntry; score: number }[]>('search_apps', { query });
+export const launchApp = (exec: string) => invoke<void>('launch_app', { exec });
+export const getHyprlandLauncherBind = () => invoke<string>('get_hyprland_launcher_bind');
+export const onToggleLauncher = (cb: () => void) =>
+  listen<void>('toggle-launcher', () => cb());

@@ -1,4 +1,6 @@
 use crate::state::AppState;
+use tauri::Emitter;
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 mod commands;
 mod pty;
@@ -20,8 +22,24 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, shortcut, event| {
+                    if event.state() == ShortcutState::Pressed {
+                        let alt_space = Shortcut::new(Some(Modifiers::ALT), Code::Space);
+                        if shortcut == &alt_space {
+                            let _ = app.emit("toggle-launcher", ());
+                        }
+                    }
+                })
+                .build(),
+        )
         .manage(app_state)
+        .setup(|app| {
+            let alt_space = Shortcut::new(Some(Modifiers::ALT), Code::Space);
+            app.global_shortcut().register(alt_space)?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             commands::greet::greet,
             commands::settings::load_settings,
@@ -47,6 +65,10 @@ pub fn run() {
             commands::sysinfo::get_battery_info,
             commands::audio::play_audio,
             commands::update_checker::check_for_update,
+            commands::launcher::list_apps,
+            commands::launcher::search_apps,
+            commands::launcher::launch_app,
+            commands::launcher::get_hyprland_launcher_bind,
         ])
         .run(tauri::generate_context!())
         .expect("error while running eDEX-DE");

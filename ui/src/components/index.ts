@@ -6,3 +6,4 @@ export { TerminalPanel } from './Terminal';
 export { FileList } from './Filesystem';
 export { SysinfoSidebar } from './Sysinfo';
 export { SettingsModal } from './Settings';
+export { LauncherOverlay } from './Launcher';
