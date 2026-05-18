@@ -53,7 +53,7 @@ jobs:
           cache: "npm"
 
       - name: Install npm dependencies
-        run: npm install
+        run: npm ci
 
       - name: Extract version from tag
         id: version
