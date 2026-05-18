@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation Guide — eDEX-DE</title>
+  <meta name="description" content="Install eDEX-DE on Debian, Fedora, Arch Linux, or build it from source." />
+  <meta name="theme-color" content="#0a0c10" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo"><span class="logo-dot"></span>eDEX-DE</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="../install/index.html">Install</a></li>
+        <li><a href="../config/index.html">Config</a></li>
+        <li><a href="../hyprland/index.html">Hyprland</a></li>
+        <li><a href="../launcher/index.html">Launcher</a></li>
+        <li><a href="../dev/index.html">Dev</a></li>
+        <li><a href="https://github.com/eDEX-OS/eDEX-DE" class="nav-cta" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="section-sm">
+    <div class="container">
+      <p class="section-label">Install Guide</p>
+      <h1 class="section-title">Installation Guide — eDEX-DE</h1>
+      <p class="section-desc">Choose your distro, install a native package, or build from source if you want the latest tree. The commands below are ready to copy.</p>
+      <div class="page-layout">
+        <aside class="toc">
+          <h4>On this page</h4>
+          <ul>
+            <li><a href="#prerequisites">Prerequisites</a></li>
+            <li><a href="#debian-ubuntu">Debian/Ubuntu</a></li>
+            <li><a href="#fedora">Fedora</a></li>
+            <li><a href="#arch-linux">Arch Linux</a></li>
+            <li><a href="#build-from-source">Build from Source</a></li>
+            <li><a href="#hyprland-setup">Hyprland Setup</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+          </ul>
+        </aside>
+        <main>
+          <section id="prerequisites" class="section-sm">
+            <p class="section-label">Before you install</p>
+            <h2 class="section-title">Prerequisites</h2>
+            <p>eDEX-DE is built for Linux desktops and works best on Wayland. Hyprland unlocks the full workspace and event integration, but the app will still run elsewhere with graceful fallbacks.</p>
+            <ul>
+              <li>Wayland session recommended; Hyprland for full IPC features</li>
+              <li>WebKitGTK + GTK3 runtime libraries installed by your package manager</li>
+              <li>Optional integrations: <code>wpctl</code>/<code>pactl</code>, <code>nmcli</code>, <code>fprintd</code>, <code>systemctl</code></li>
+            </ul>
+            <div class="alert alert-info">If you just want the quickest path, use the packaged build for your distro. Source builds are best for contributors and testers.</div>
+          </section>
+
+          <section id="debian-ubuntu" class="section-sm">
+            <p class="section-label">Packages</p>
+            <h2 class="section-title">Quick install tabs</h2>
+            <div class="platform-tabs">
+              <div class="tab-buttons">
+                <button class="tab-btn" data-tab="debian">Debian / Ubuntu</button>
+                <button class="tab-btn" data-tab="fedora">Fedora</button>
+                <button class="tab-btn" data-tab="arch">Arch Linux</button>
+              </div>
+              <div class="tab-panel" data-tab="debian">
+                <div class="code-block">
+                  <div class="code-header"><span>Debian / Ubuntu</span><button class="copy-btn">Copy</button></div>
+                  <pre><code>wget https://github.com/eDEX-OS/eDEX-DE/releases/latest/download/edex-de_amd64.deb
+sudo dpkg -i edex-de_amd64.deb
+sudo apt -f install</code></pre>
+                </div>
+              </div>
+              <div class="tab-panel" data-tab="fedora">
+                <div class="code-block">
+                  <div class="code-header"><span>Fedora</span><button class="copy-btn">Copy</button></div>
+                  <pre><code>sudo rpm -i https://github.com/eDEX-OS/eDEX-DE/releases/latest/download/edex-de.x86_64.rpm</code></pre>
+                </div>
+              </div>
+              <div class="tab-panel" data-tab="arch">
+                <div class="code-block">
+                  <div class="code-header"><span>Arch Linux</span><button class="copy-btn">Copy</button></div>
+                  <pre><code>yay -S edex-de
+# or: paru -S edex-de</code></pre>
+                </div>
+              </div>
+            </div>
+            <p>The repository also ships <code>packaging/install.sh</code> for a curl-pipe bootstrap flow when you do not want to pick a package manually.</p>
+            <div class="code-block">
+              <div class="code-header"><span>Universal installer</span><button class="copy-btn">Copy</button></div>
+              <pre><code>curl -fsSL https://raw.githubusercontent.com/eDEX-OS/eDEX-DE/master/packaging/install.sh | bash</code></pre>
+            </div>
+          </section>
+
+          <section id="fedora" class="section-sm">
+            <p class="section-label">Fedora</p>
+            <h2 class="section-title">Install on Fedora</h2>
+            <p>Install the latest RPM release asset directly, or rebuild from <code>packaging/edex-de.spec</code> if you prefer a local RPM workflow.</p>
+            <div class="code-block">
+              <div class="code-header"><span>Fedora RPM</span><button class="copy-btn">Copy</button></div>
+              <pre><code>sudo rpm -i https://github.com/eDEX-OS/eDEX-DE/releases/latest/download/edex-de.x86_64.rpm</code></pre>
+            </div>
+          </section>
+
+          <section id="arch-linux" class="section-sm">
+            <p class="section-label">Arch Linux</p>
+            <h2 class="section-title">Install on Arch Linux</h2>
+            <p>Use the AUR helper of your choice, or build from the bundled <code>packaging/PKGBUILD</code> if you want to package it yourself.</p>
+            <div class="code-block">
+              <div class="code-header"><span>Arch AUR</span><button class="copy-btn">Copy</button></div>
+              <pre><code>yay -S edex-de
+# or: paru -S edex-de</code></pre>
+            </div>
+          </section>
+
+          <section id="build-from-source" class="section-sm">
+            <p class="section-label">Source builds</p>
+            <h2 class="section-title">Build from source</h2>
+            <p>For development builds, install Rust stable, Node.js 20+, and the distro-specific WebKit/GTK packages below.</p>
+            <div class="code-block">
+              <div class="code-header"><span>Debian / Ubuntu dependencies</span><button class="copy-btn">Copy</button></div>
+              <pre><code>sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libssl-dev \
+                 libasound2-dev libayatana-appindicator3-dev pkg-config</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-header"><span>Fedora dependencies</span><button class="copy-btn">Copy</button></div>
+              <pre><code>sudo dnf install webkit2gtk4.1-devel gtk3-devel openssl-devel \
+                 alsa-lib-devel libayatana-appindicator-gtk3-devel</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-header"><span>Build commands</span><button class="copy-btn">Copy</button></div>
+              <pre><code>git clone https://github.com/eDEX-OS/eDEX-DE.git
+cd eDEX-DE
+npm install
+npm run tauri -- build
+# dev mode
+npm run tauri -- dev</code></pre>
+            </div>
+          </section>
+
+          <section id="hyprland-setup" class="section-sm">
+            <p class="section-label">Window manager integration</p>
+            <h2 class="section-title">Hyprland setup</h2>
+            <p>Add a startup rule and optional Meta+Space launcher bind to your Hyprland config. You can also generate this from inside eDEX-DE.</p>
+            <div class="code-block">
+              <div class="code-header"><span>~/.config/hypr/hyprland.conf</span><button class="copy-btn">Copy</button></div>
+              <pre><code>exec-once = edex-de
+bind = SUPER, Space, exec, edex-de --launcher
+windowrule = pin, edex-de
+windowrule = fullscreen, edex-de
+windowrule = nodecor, edex-de
+windowrule = noborder, edex-de
+windowrule = noshadow, edex-de
+windowrule = noanim, edex-de</code></pre>
+            </div>
+            <p>The built-in Hyprland Config Generator saves a ready-to-source file at <code>~/.config/edex-de/hyprland-integration.conf</code>.</p>
+          </section>
+
+          <section id="troubleshooting" class="section-sm">
+            <p class="section-label">Troubleshooting</p>
+            <h2 class="section-title">Common install issues</h2>
+            <div class="faq-item">
+              <button class="faq-question">The app starts but Hyprland widgets are empty.</button>
+              <div class="faq-answer">Make sure you launched eDEX-DE from the same Hyprland session so <code>HYPRLAND_INSTANCE_SIGNATURE</code> is available. Outside Hyprland, the UI will stay up but workspace widgets are intentionally disabled.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-question">The package installs but audio controls are missing.</button>
+              <div class="faq-answer">Audio controls depend on <code>wpctl</code> or <code>pactl</code>. Install PipeWire or PulseAudio utilities and restart eDEX-DE.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-question">Source build fails on Linux with GTK/WebKit errors.</button>
+              <div class="faq-answer">Double-check the distro-specific system packages above. Tauri needs WebKitGTK, GTK3, OpenSSL, and appindicator headers to compile native bundles.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-question">How do I update to the latest release?</button>
+              <div class="faq-answer">Download the newest package from GitHub Releases, or rebuild from the latest git checkout. Native package managers will replace the previous version cleanly.</div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <p>eDEX-DE — <a href="https://github.com/eDEX-OS/eDEX-DE" target="_blank" rel="noopener">GitHub</a> · Licensed under <a href="https://github.com/eDEX-OS/eDEX-DE/blob/master/LICENSE" target="_blank" rel="noopener">GPL-3.0</a> · Inspired by <a href="https://github.com/GitSquared/edex-ui" target="_blank" rel="noopener">eDEX-UI</a></p>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

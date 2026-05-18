@@ -1,185 +1,212 @@
 <p align="center">
-  <br>
-  <img alt="Logo" src="media/logo.png">
+  <img alt="eDEX-DE" src="media/logo.png" width="200">
   <br><br>
-  <a href="https://github.com/yourusername/eDEX-UI-NEXT"><img alt="Maintained" src="https://img.shields.io/badge/maintained-yes-brightgreen"></a>
-  <a href="https://github.com/yourusername/eDEX-UI-NEXT/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/release/yourusername/eDEX-UI-NEXT.svg?style=popout"></a>
-  <a href="https://github.com/yourusername/eDEX-UI-NEXT/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/yourusername/eDEX-UI-NEXT.svg?style=popout"></a>
-  <br>
-  <!-- Update or add your own download badges here -->
-  <br>
-  <a href="https://github.com/GitSquared/edex-ui/releases/tag/v2.2.8"><strong><i>(Original project archived Oct. 18th 2021)</i></strong></a>
-  <br><br><br>
+  <a href="https://github.com/eDEX-OS/eDEX-DE/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/eDEX-OS/eDEX-DE/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/eDEX-OS/eDEX-DE/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/eDEX-OS/eDEX-DE?style=flat"></a>
+  <a href="https://github.com/eDEX-OS/eDEX-DE/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/github/license/eDEX-OS/eDEX-DE?style=flat"></a>
+  <a href="https://edex-os.github.io/eDEX-DE/"><img alt="Docs" src="https://img.shields.io/badge/docs-GitHub%20Pages-00e5ff?style=flat"></a>
 </p>
 
-> **:rocket: Welcome to eDEX-UI-NEXT!**
->
-> **Project status:** _Actively maintained and improved in 2025. Now fully compatible with modern Linux (Debian/Ubuntu 2025+), and with major performance improvements—lower CPU & memory usage!_
->
-> eDEX-UI-NEXT is a community-powered fork of the legendary [eDEX-UI](https://github.com/GitSquared/edex-ui), bringing the sci-fi terminal into the future. See below for what’s new!
+# eDEX-DE
+
+> A sci-fi desktop environment frontend for Hyprland — built in Rust + TypeScript/Preact with Tauri v2.
+
+📖 **[Documentation](https://edex-os.github.io/eDEX-DE/)** · 🚀 **[Install Guide](https://edex-os.github.io/eDEX-DE/install/)** · 🌐 **[GitHub](https://github.com/eDEX-OS/eDEX-DE)**
 
 ---
 
-eDEX-UI-NEXT is a fullscreen, cross-platform terminal emulator and system monitor that looks and feels like a sci-fi computer interface.
+## Highlights
+
+- **Sci-fi terminal DE** — fullscreen tron-themed interface inspired by eDEX-UI, rebuilt from scratch
+- **Tauri v2 + Rust backend** — blazing-fast, memory-safe; replaces Electron entirely
+- **TypeScript + Preact UI** — typed, component-based frontend; no jQuery, no vanilla JS globals
+- **Hyprland IPC integration** — live window list, workspace switcher, config generator, event streaming
+- **Spotlight/Meta app launcher** — fuzzy-search over `.desktop` apps, shell commands, math eval; Alt+Space or Meta
+- **System integrations** — PipeWire/PulseAudio volume, NetworkManager WiFi, fprintd fingerprint auth, systemd service manager with logs
+- **Native packages** — `.deb` (Debian/Ubuntu), `.rpm` (Fedora), `PKGBUILD` (Arch/AUR), universal installer
+- **Wayland-native** — fullscreen layer surface, no decorations, plays nicely with Hyprland window rules
 
 ---
 
-<a href="https://youtu.be/BGeY1rK19zA">
-  <img align="right" width="400" alt="Demo on YouTube" src="media/youtube-demo-teaser.gif">
-</a>
+## Version Roadmap
 
-Heavily inspired by the [TRON Legacy movie effects](https://web.archive.org/web/20170511000410/http://jtnimoy.com/blogs/projects/14881671) (especially the [Board Room sequence](https://gmunk.com/TRON-Board-Room)), the original eDEX-UI project was meant to be *"[DEX-UI](https://github.com/seenaburns/dex-ui) with less « art » and more « distributable software »"*.
-
-While keeping a futuristic look and feel, it strives to maintain a certain level of functionality and to be usable in real-life scenarios, with the larger goal of bringing science-fiction UXs to the mainstream.
-
-<br>
-
-It might or might not be a joke taken too seriously.
-
----
-
-<p align="center">
-  <em>Jump to: <br><a href="#whats-new-in-this-fork-">What's New</a> — <a href="#features">Features</a> — <a href="#screenshots">Screenshots</a> — <a href="#qa">Questions & Answers</a> — <strong><a href="#how-do-i-get-it">Download</a></strong> — <a href="#featured-in">Featured In</a> — <a href="#useful-commands-for-the-nerds">Contributor Instructions</a> — <a href="#credits">Credits</a></em>
-</p>
-
----
-
-## What's New in eDEX-UI-NEXT? 🚀
-
-- **2025 Compatibility:** Runs flawlessly on the latest Debian/Ubuntu and other modern Linux systems.
-- **Performance Boost:** Optimized to consume less CPU and memory.
-- **Actively Maintained:** Open to issues, pull requests, and new features.
-- **More improvements coming—your contributions are welcome!**
-
-_See [CHANGELOG.md](./CHANGELOG.md) for full technical details._
+| Version | Status | Description |
+|---------|--------|-------------|
+| v0.1.0 | ✅ Released | Tauri v2 bootstrap — Rust backend, Preact/Vite frontend, eDEX branding |
+| v0.2.0 | ✅ Released | Rust backend core — PTY terminal server, sysinfo, filesystem commands |
+| v0.3.0 | ✅ Released | TypeScript/Preact foundation — types, IPC wrappers, theme/settings context |
+| v0.4.0 | ✅ Released | Full UI port — Terminal, FileSystem, SysInfo, StatusBar, TopBar, all components |
+| v0.5.0 | ✅ Released | App Launcher — fuzzy .desktop search, Alt+Space / Meta hotkey, shell/math mode |
+| v0.6.0 | ✅ Released | Hyprland IPC — window list, workspace switcher, config editor, event streaming |
+| v0.7.0 | ✅ Released | System integrations — PipeWire audio, NetworkManager, fprintd, systemd service manager |
+| v0.8.0 | ✅ Released | Wayland layer shell — fullscreen/nodecor window config, Hyprland window rules |
+| v0.9.0 | ✅ Released | Packaging — .deb, .rpm, PKGBUILD, universal installer script |
+| v0.10.0 | ✅ Released | CI/CD — GitHub Actions CI on push/PR, release workflow on vX.Y.Z tag |
+| v0.12.0 | ✅ Released | Integration polish — animated boot screen, graceful degradation, dependency docs |
+| v0.13.0 | ✅ Released | Documentation — comprehensive README, GitHub Pages site |
 
 ---
 
-## Features
+## Repository Structure
 
-- Fully featured terminal emulator with tabs, colors, mouse events, and support for `curses` and `curses`-like applications.
-- Real-time system (CPU, RAM, swap, processes) and network (GeoIP, active connections, transfer rates) monitoring.
-- Full support for touch-enabled displays, including an on-screen keyboard.
-- Directory viewer that follows the CWD (current working directory) of the terminal.
-- Automatically pauses monitoring modules when the window loses focus and resumes when focus returns.
-- Advanced customization using themes, on-screen keyboard layouts, CSS injections. See the [wiki](https://github.com/GitSquared/edex-ui/wiki) for more info.
-- Optional sound effects made by a talented sound designer for maximum Hollywood hacking vibe.
-
----
-
-## Screenshots
-
-![Default screenshot](media/screenshot_default.png)
-_[neofetch](https://github.com/dylanaraps/neofetch) on eDEX-UI with the default "tron" theme & QWERTY keyboard_
-
-![Blade screenshot](media/screenshot_blade.png)
-_Checking out available themes in [eDEX's config dir](https://github.com/GitSquared/edex-ui/wiki/userData) with [`ranger`](https://github.com/ranger/ranger) and the "blade" theme_
-
-![Disrupted screenshot](media/screenshot_disrupted.png)
-_[cmatrix](https://github.com/abishekvashok/cmatrix) with the experimental "tron-disrupted" theme, and the user-contributed DVORAK keyboard_
-
-![Horizon screenshot](media/screenshot_horizon.png)
-_Editing eDEX-UI source code with `nvim` and the custom [`horizon-full`](https://github.com/GitSquared/horizon-edex-theme) theme_
-
----
-
-## Q&A
-
-#### How do I get it?
-Check the badges at the top, visit the [Releases](https://github.com/yourusername/eDEX-UI-NEXT/releases) tab, or download via [repositories](https://repology.org/project/edex-ui/versions) (Homebrew, AUR, etc).
-
-Public release binaries are unsigned ([why](https://gaby.dev/posts/code-signing)). On Linux, you will need to `chmod +x` the AppImage file in order to run it.
-
-#### I have a problem!
-Search through the [Issues](https://github.com/yourusername/eDEX-UI-NEXT/issues) to see if yours has already been reported. If not, open a new issue!
-
-#### Can you disable the keyboard/the filesystem display?
-You can't disable them (yet) but you can hide them. See the `tron-notype` theme.
-
-#### Why is the file browser saying that "Tracking Failed"? (Windows only)
-On Linux and macOS, eDEX tracks where you're going in your terminal tab to display the content of the current folder on-screen.  
-On Windows, this isn't possible yet, so the file browser runs in "detached" mode. You can still browse files & directories and click files to input their path in the terminal.
-
-#### Can this run on a Raspberry Pi / ARM device?
-We provide prebuilt arm64 builds. For other platforms, see [this issue comment](https://github.com/GitSquared/edex-ui/issues/313#issuecomment-443465345), and the thread on issue [#818](https://github.com/GitSquared/edex-ui/issues/818).
-
-#### Is this repo actively maintained?
-**Yes! eDEX-UI-NEXT is a modern, maintained fork as of 2025, bringing eDEX-UI to the latest Linux distributions and improving performance.**  
-See [What's New](#whats-new-in-edex-ui-next-) above.
-
-#### How did you make this?
-Glad you're interested! See [#272](https://github.com/GitSquared/edex-ui/issues/272).
+```
+eDEX-DE/
+├── .github/workflows/      # CI, release, and GitHub Pages deploy workflows
+├── src-tauri/              # Rust backend (Tauri v2)
+│   ├── src/
+│   │   ├── commands/       # All Tauri IPC commands (sysinfo, terminal, filesystem, audio, network, etc.)
+│   │   ├── main.rs         # App entry, Tauri builder
+│   │   └── lib.rs          # Plugin registration, global shortcuts, Hyprland event listener
+│   ├── Cargo.toml          # Rust dependencies
+│   └── tauri.conf.json     # App config (window, bundle targets, identifier)
+├── ui/                     # TypeScript + Preact frontend
+│   ├── src/
+│   │   ├── components/     # All UI components (Terminal, FileSystem, SysInfo, Launcher, etc.)
+│   │   ├── context/        # Settings and SysInfo Preact contexts
+│   │   ├── hooks/          # Custom hooks
+│   │   ├── ipc/            # Typed Tauri IPC wrappers
+│   │   ├── styles/         # main.css — all styles
+│   │   └── types/          # TypeScript interfaces/types
+│   └── index.html
+├── packaging/
+│   ├── PKGBUILD            # Arch Linux AUR package script
+│   ├── edex-de.spec        # RPM spec for Fedora/RHEL
+│   ├── edex-de.desktop     # XDG desktop entry
+│   └── install.sh          # Universal curl-pipe installer
+├── docs/                   # GitHub Pages documentation site
+└── Dependencies.md         # Runtime and build dependencies
+```
 
 ---
 
-## Featured in...
+## Getting Started
 
-- [Linux Uprising Blog](https://www.linuxuprising.com/2018/11/edex-ui-fully-functioning-sci-fi.html)
-- [My post on r/unixporn](https://www.reddit.com/r/unixporn/comments/9ysbx7/oc_a_little_project_that_ive_been_working_on/)
-- [Korben article (in french)](https://korben.info/une-interface-futuriste-pour-vos-ecrans-tactiles.html)
-- [Hacker News](https://news.ycombinator.com/item?id=18509828)
-- [This tweet that made me smile](https://twitter.com/mikemaccana/status/1065615451940667396)
-- [BoingBoing article](https://boingboing.net/2018/11/23/simulacrum-sf.html) - Apparently I'm a "French hacker"
-- [OReilly 4 short links](https://www.oreilly.com/ideas/four-short-links-23-november-2018)
-- [Hackaday](https://hackaday.com/2018/11/23/look-like-a-movie-hacker/)
-- [Developpez.com (another french link)](https://www.developpez.com/actu/234808/Une-application-de-bureau-ressemble-a-une-interface-d-ordinateur-de-science-fiction-inspiree-des-effets-du-film-TRON-Legacy/)
-- [GitHub Blog's Release Radar November 2018](https://blog.github.com/2018-12-21-release-radar-november-2018/)
-- [opensource.com Productive Tools for 2019](https://opensource.com/article/19/1/productivity-tool-edex-ui)
-- [O'Reilly 4 short links (again)](https://www.oreilly.com/radar/four-short-links-7-july-2020/)
-- [LinuxLinks](https://www.linuxlinks.com/linux-candy-edex-ui-sci-fi-computer-terminal-emulator-system-monitor/)
-- [Linux For Everyone (Youtube)](https://www.youtube.com/watch?v=gbzqCAjm--g)
-- [BestOfJS Rising Stars 2020](https://risingstars.js.org/2020/en#edex-ui)
-- [The Geek Freaks (Youtube/German)](https://youtu.be/TSjMIeLG0Sk)
-- [JSNation Open Source Awards 2021](https://osawards.com/javascript/#nominees) (Nominee - Fun Side Project of the Year)
+### Install from Package
 
----
+See the **[Installation Guide](https://edex-os.github.io/eDEX-DE/install/)** for per-distro instructions, or use the universal installer:
 
-## Useful commands for the nerds
+```bash
+curl -fsSL https://raw.githubusercontent.com/eDEX-OS/eDEX-DE/master/packaging/install.sh | bash
+```
 
-**IMPORTANT NOTE:** The following instructions are for running eDEX-UI-NEXT from source (unoptimized/development). For stable software, see [How do I get it?](#how-do-i-get-it).
+**Debian/Ubuntu:**
+```bash
+wget https://github.com/eDEX-OS/eDEX-DE/releases/latest/download/edex-de_amd64.deb
+sudo dpkg -i edex-de_amd64.deb
+```
 
-#### Starting from source:
-On *nix systems (You'll need Xcode command line tools on macOS):
+**Fedora:**
+```bash
+sudo rpm -i https://github.com/eDEX-OS/eDEX-DE/releases/latest/download/edex-de.x86_64.rpm
+```
 
-- clone the repository
-- `npm run install-linux`
-- `npm run start`
+**Arch Linux (AUR):**
+```bash
+yay -S edex-de
+# or: paru -S edex-de
+```
 
-On Windows:
+### Build from Source
 
-- start cmd or PowerShell **as administrator**
-- clone the repository
-- `npm run install-windows`
-- `npm run start`
+#### Prerequisites
 
-#### Building
-Note: Due to native modules, you can only build for the host OS.
+- Rust stable toolchain (`rustup` — https://rustup.rs)
+- Node.js 20+ LTS
+- System libraries (Debian/Ubuntu):
 
-- `npm install` (NOT `install-linux` or `install-windows`)
-- `npm run build-linux` or `build-windows` or `build-darwin`
+```bash
+sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libssl-dev                          libasound2-dev libayatana-appindicator3-dev pkg-config
+```
 
-The script will minify, recompile, and create distributable assets in the `dist` folder.
+#### Build
 
-#### Getting the bleeding edge
-For the latest development binaries, visit [GitHub Actions](https://github.com/GitSquared/edex-ui/actions), click the latest commit, and download the artifacts for your OS.
+```bash
+git clone https://github.com/eDEX-OS/eDEX-DE.git
+cd eDEX-DE
+npm install
+npm run tauri -- build
+```
 
----
+#### Dev Mode
 
-## Credits
-
-Original eDEX-UI by [Squared](https://github.com/GitSquared).  
-[PixelyIon](https://github.com/PixelyIon) helped with Windows compatibility and early advice.  
-[IceWolf](https://soundcloud.com/iamicewolf) composed the sound effects on v2.1.x and above.
+```bash
+npm run tauri -- dev
+```
 
 ---
 
-## Thanks
+## Hyprland Setup
 
-Special thanks to [Seena](https://github.com/seenaburns) and the r/unixporn community.  
-Also to the developers of [xterm.js](https://github.com/xtermjs/xterm.js), [systeminformation](https://github.com/sebhildebrandt/systeminformation), [SmoothieCharts](https://github.com/joewalnes/smoothie), and [Rob "Arscan" Scanlon](https://github.com/arscan) for [ENCOM Globe](https://github.com/arscan/encom-globe).
+Add to your `~/.config/hypr/hyprland.conf`:
+
+```ini
+# Launch eDEX-DE
+exec-once = edex-de
+
+# App Launcher keybind (Meta key)
+bind = SUPER, Space, exec, edex-de --launcher
+
+# Window rules
+windowrule = pin, edex-de
+windowrule = fullscreen, edex-de
+windowrule = nodecor, edex-de
+windowrule = noborder, edex-de
+windowrule = noshadow, edex-de
+windowrule = noanim, edex-de
+```
+
+Use the built-in **Hyprland Config Generator** (Ctrl+Shift+H → Save Config) to generate and save these rules automatically to `~/.config/edex-de/hyprland-integration.conf`.
 
 ---
 
-## Licensing
+## App Launcher
 
-Licensed under the [GPLv3.0](https://github.com/GitSquared/edex-ui/blob/master/LICENSE).
+Open with **Alt+Space** (Spotlight style) or **Meta+Space** (configured via Hyprland bind above).
+
+| Mode | Prefix | Example |
+|------|--------|---------|
+| App search | *(none)* | `firefox` |
+| Shell command | `>` | `> htop` |
+| Math | *(expression)* | `2 + 2 * 3` |
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| Alt+Space | Open App Launcher |
+| Ctrl+Shift+S | Open Settings |
+| Ctrl+Shift+H | Open Hyprland Config |
+
+---
+
+## Custom Rust Components
+
+| Component | Description |
+|-----------|-------------|
+| `commands/sysinfo.rs` | CPU, RAM, disk, network, process list via `sysinfo` crate |
+| `commands/terminal.rs` | PTY server using `portable-pty` + tokio WebSocket |
+| `commands/filesystem.rs` | File browser with fuzzy search via `fuzzy-matcher` |
+| `commands/audio_control.rs` | PipeWire/PulseAudio volume via `pactl`/`wpctl` CLI |
+| `commands/network.rs` | NetworkManager via `nmcli` CLI |
+| `commands/fingerprint.rs` | fprintd fingerprint auth via CLI |
+| `commands/systemd.rs` | systemd service manager via `systemctl`/`journalctl` |
+| `commands/hyprland.rs` | Hyprland IPC via Unix socket (raw, no crate) |
+| `commands/launcher.rs` | .desktop file parser + fuzzy app search |
+
+---
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## License
+
+GPL-3.0 — see [LICENSE](LICENSE).
+
+---
+
+*Inspired by the legendary [eDEX-UI](https://github.com/GitSquared/edex-ui) by GitSquared.*

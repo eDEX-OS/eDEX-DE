@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>eDEX-DE — Sci-fi DE for Hyprland</title>
+  <meta name="description" content="eDEX-DE is a fullscreen sci-fi desktop environment frontend for Hyprland, built in Rust + TypeScript/Preact with Tauri v2." />
+  <meta name="theme-color" content="#0a0c10" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-dot"></span>
+        eDEX-DE
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="install/index.html">Install</a></li>
+        <li><a href="config/index.html">Config</a></li>
+        <li><a href="hyprland/index.html">Hyprland</a></li>
+        <li><a href="launcher/index.html">Launcher</a></li>
+        <li><a href="dev/index.html">Dev</a></li>
+        <li><a href="https://github.com/eDEX-OS/eDEX-DE" class="nav-cta" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">⚡ Sci-fi DE for Hyprland · v0.13.0</div>
+      <h1><span>eDEX-DE</span></h1>
+      <p class="hero-sub">A fullscreen sci-fi desktop environment frontend for Hyprland — built in Rust + TypeScript/Preact with Tauri v2.</p>
+      <div class="hero-actions">
+        <a href="install/index.html" class="btn btn-primary btn-lg">⬇ Install Guide</a>
+        <a href="https://github.com/eDEX-OS/eDEX-DE" class="btn btn-outline btn-lg" target="_blank" rel="noopener">GitHub →</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <p class="section-label">Features</p>
+      <h2 class="section-title">Everything you need for a sci-fi Hyprland DE</h2>
+      <p class="section-desc">eDEX-DE replaces your desktop with a fully-functional, tron-themed terminal environment with deep Linux integration.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🖥️</div>
+          <h3>Terminal DE</h3>
+          <p>Fullscreen multi-tab terminal built on xterm.js + Rust PTY server. Up to 5 concurrent sessions with WebSocket transport.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🪟</div>
+          <h3>Hyprland IPC</h3>
+          <p>Live window list, workspace switcher, active window title, and a built-in config generator with window rules and keybinds.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🚀</div>
+          <h3>App Launcher</h3>
+          <p>Spotlight-style fuzzy launcher over .desktop apps. Open with Alt+Space or Meta. Supports shell commands and math eval.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📦</div>
+          <h3>Native Packages</h3>
+          <p>.deb for Debian/Ubuntu, .rpm for Fedora, PKGBUILD for Arch AUR. Built and published automatically on version tags via GitHub Actions.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔌</div>
+          <h3>System Integrations</h3>
+          <p>PipeWire/PulseAudio volume control, NetworkManager WiFi panel, fprintd fingerprint auth, systemd service manager with live logs.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3>Sci-fi Themes</h3>
+          <p>Tron-inspired default theme with full CSS custom property theming. Customize colors, fonts, and glow effects via settings.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background: var(--surface);">
+    <div class="container">
+      <p class="section-label">Architecture</p>
+      <h2 class="section-title">How it works</h2>
+      <p class="section-desc">Tauri v2 bridges a Rust backend and a TypeScript/Preact frontend over a type-safe IPC layer, with direct Unix socket connections to Hyprland.</p>
+      <div class="code-block">
+        <div class="code-header"><span>Architecture overview</span></div>
+        <pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│                        eDEX-DE Process                          │
+│                                                                 │
+│  ┌──────────────────────────┐    ┌───────────────────────────┐  │
+│  │   Rust Backend (Tauri)   │    │  TypeScript/Preact UI     │  │
+│  │                          │◄──►│                           │  │
+│  │  • sysinfo (CPU/RAM/disk)│    │  • Terminal (xterm.js)    │  │
+│  │  • portable-pty (PTY)    │    │  • FileSystem browser     │  │
+│  │  • filesystem commands   │ IPC│  • SysInfo panels         │  │
+│  │  • audio (pactl/wpctl)   │    │  • App Launcher           │  │
+│  │  • network (nmcli)       │    │  • Workspace switcher     │  │
+│  │  • systemd (systemctl)   │    │  • Settings / Hypr config │  │
+│  └──────────────────────────┘    └───────────────────────────┘  │
+│              │                                                  │
+│              │ Unix socket                                      │
+│              ▼                                                  │
+│  ┌──────────────────────────┐                                   │
+│  │    Hyprland IPC          │                                   │
+│  │  .socket.sock (commands) │                                   │
+│  │  .socket2.sock (events)  │                                   │
+│  └──────────────────────────┘                                   │
+└─────────────────────────────────────────────────────────────────┘
+        </code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <p class="section-label">Install</p>
+      <h2 class="section-title">Get eDEX-DE on your system</h2>
+      <div class="distro-grid">
+        <div class="distro-card">
+          <h3>🟠 Debian / Ubuntu</h3>
+          <div class="code-block">
+            <div class="code-header"><span>bash</span><button class="copy-btn">Copy</button></div>
+            <pre><code>wget https://github.com/eDEX-OS/eDEX-DE/releases/latest/download/edex-de_amd64.deb
+sudo dpkg -i edex-de_amd64.deb</code></pre>
+          </div>
+        </div>
+        <div class="distro-card">
+          <h3>🔵 Fedora</h3>
+          <div class="code-block">
+            <div class="code-header"><span>bash</span><button class="copy-btn">Copy</button></div>
+            <pre><code>sudo rpm -i https://github.com/eDEX-OS/eDEX-DE/releases/latest/download/edex-de.x86_64.rpm</code></pre>
+          </div>
+        </div>
+        <div class="distro-card">
+          <h3>🐧 Arch Linux</h3>
+          <div class="code-block">
+            <div class="code-header"><span>bash</span><button class="copy-btn">Copy</button></div>
+            <pre><code>yay -S edex-de
+# or: paru -S edex-de</code></pre>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top: 1.5rem; text-align: center;"><a href="install/index.html">See full installation guide →</a></p>
+    </div>
+  </section>
+
+  <section class="section" style="background: var(--surface);">
+    <div class="container">
+      <p class="section-label">Tech Stack</p>
+      <h2 class="section-title">Built with Rust-first tools</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Component</th><th>Description</th><th>Tech</th></tr></thead>
+          <tbody>
+            <tr><td>App framework</td><td>Native Wayland window, IPC bridge, bundler</td><td>Tauri v2 + Rust</td></tr>
+            <tr><td>UI</td><td>Component-based reactive frontend</td><td>TypeScript + Preact + Vite</td></tr>
+            <tr><td>Terminal</td><td>PTY spawning + WebSocket transport</td><td>portable-pty + tokio-tungstenite</td></tr>
+            <tr><td>System info</td><td>CPU, RAM, disk, network, processes</td><td>sysinfo crate</td></tr>
+            <tr><td>Hyprland IPC</td><td>Raw Unix socket client + event listener</td><td>tokio::net::UnixStream</td></tr>
+            <tr><td>App launcher</td><td>.desktop parser + fuzzy search</td><td>walkdir + fuzzy-matcher</td></tr>
+            <tr><td>Audio</td><td>Volume control via CLI</td><td>pactl / wpctl</td></tr>
+            <tr><td>Network</td><td>WiFi scan + connect via CLI</td><td>nmcli</td></tr>
+            <tr><td>Terminal emulator</td><td>Frontend terminal rendering</td><td>xterm.js v6</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <p class="section-label">FAQ</p>
+      <h2 class="section-title" style="margin-bottom: 2rem;">Common questions</h2>
+      <div class="faq-item">
+        <button class="faq-question">Does eDEX-DE require Hyprland?</button>
+        <div class="faq-answer">No. eDEX-DE runs on any Wayland compositor (or even X11). Hyprland-specific features (workspace switcher, config generator, event streaming) will show a graceful "Hyprland not available" message when running outside of Hyprland.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">Can I use eDEX-DE as my only desktop environment?</button>
+        <div class="faq-answer">Yes, with Hyprland handling window management. Configure <code>exec-once = edex-de</code> in your hyprland.conf and eDEX-DE will launch fullscreen on startup. You can open other apps via the built-in launcher or terminal.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">How do I open the app launcher?</button>
+        <div class="faq-answer">Press <code>Alt+Space</code> from within eDEX-DE for the Spotlight-style launcher. For the Meta (Super) key, add <code>bind = SUPER, Space, exec, edex-de --launcher</code> to your hyprland.conf.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">Which audio systems are supported?</button>
+        <div class="faq-answer">eDEX-DE supports PipeWire (via <code>wpctl</code>) and PulseAudio (via <code>pactl</code>). It automatically detects which is available. If neither is found, the volume control is hidden gracefully.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">Is there a config file?</button>
+        <div class="faq-answer">Yes. Settings are stored in <code>~/.config/edex-de/settings.json</code>. Use the built-in Settings panel (Ctrl+Shift+S) to edit them visually. The Hyprland integration config is saved to <code>~/.config/edex-de/hyprland-integration.conf</code>.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">How do I build from source?</button>
+        <div class="faq-answer">Install Rust stable, Node.js 20+, and system libraries, then run <code>npm install && npm run tauri -- build</code>. See the <a href="dev/index.html">Developer Guide</a> for full instructions.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <p>eDEX-DE — <a href="https://github.com/eDEX-OS/eDEX-DE" target="_blank" rel="noopener">GitHub</a> · Licensed under <a href="https://github.com/eDEX-OS/eDEX-DE/blob/master/LICENSE" target="_blank" rel="noopener">GPL-3.0</a> · Inspired by <a href="https://github.com/GitSquared/edex-ui" target="_blank" rel="noopener">eDEX-UI</a></p>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

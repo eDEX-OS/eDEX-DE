@@ -1,6 +1,6 @@
 # Maintainer: eDEX-DE Contributors <https://github.com/eDEX-OS/eDEX-DE>
 pkgname=edex-de
-pkgver=0.12.0
+pkgver=0.13.0
 pkgrel=1
 pkgdesc="Sci-fi themed Wayland Desktop Environment for Hyprland"
 arch=('x86_64' 'aarch64')
