@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useSettings } from '../context';
 import { padStart } from '../utils';
+import { WorkspaceBar } from './WorkspaceBar';
 
 export function TopBar() {
   const { settings } = useSettings();
@@ -33,6 +34,7 @@ export function TopBar() {
     <div class="topbar">
       <div class="topbar-left">
         <span class="topbar-brand">eDEX-DE</span>
+        <WorkspaceBar />
       </div>
       <div class="topbar-center">
         <span class="topbar-time">{time}</span>

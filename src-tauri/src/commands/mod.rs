@@ -5,6 +5,7 @@ pub mod filesystem;
 pub mod sysinfo;
 pub mod audio;
 pub mod launcher;
+pub mod hyprland;
 pub mod update_checker;
 
 #[allow(unused_imports)]
@@ -21,5 +22,10 @@ pub use sysinfo::{get_battery_info, get_cpu_info, get_disk_info, get_net_stats, 
 pub use audio::play_audio;
 #[allow(unused_imports)]
 pub use launcher::{get_hyprland_launcher_bind, launch_app, list_apps, search_apps};
+#[allow(unused_imports)]
+pub use hyprland::{
+    generate_hyprland_config, get_active_window, get_hyprland_status, get_monitors,
+    get_workspaces, hypr_dispatch, switch_workspace,
+};
 #[allow(unused_imports)]
 pub use update_checker::check_for_update;

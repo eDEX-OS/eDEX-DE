@@ -4,6 +4,7 @@ import {
   BootScreen, TopBar, StatusBar,
   TerminalPanel, FileList, SysinfoSidebar, SettingsModal, LauncherOverlay,
 } from './components';
+import { HyprlandConfigModal } from './components/Settings';
 import { onToggleLauncher } from './ipc';
 import { applyThemeToCssVars } from './utils';
 import './styles/main.css';
@@ -13,6 +14,7 @@ function AppShell() {
   const [booted, setBooted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showLauncher, setShowLauncher] = useState(false);
+  const [showHyprConfig, setShowHyprConfig] = useState(false);
 
   useEffect(() => {
     if (loaded) applyThemeToCssVars(settings.theme);
@@ -31,6 +33,10 @@ function AppShell() {
       if (e.ctrlKey && e.shiftKey && e.key === 'S') {
         e.preventDefault();
         setShowSettings((v) => !v);
+      }
+      if (e.ctrlKey && e.shiftKey && e.key === 'H') {
+        e.preventDefault();
+        setShowHyprConfig((v) => !v);
       }
       if (e.altKey && e.code === 'Space') {
         e.preventDefault();
@@ -69,6 +75,7 @@ function AppShell() {
       <StatusBar />
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showLauncher && <LauncherOverlay onClose={() => setShowLauncher(false)} />}
+      {showHyprConfig && <HyprlandConfigModal onClose={() => setShowHyprConfig(false)} />}
     </div>
   );
 }

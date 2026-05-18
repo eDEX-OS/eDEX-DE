@@ -67,3 +67,56 @@ export const launchApp = (exec: string) => invoke<void>('launch_app', { exec });
 export const getHyprlandLauncherBind = () => invoke<string>('get_hyprland_launcher_bind');
 export const onToggleLauncher = (cb: () => void) =>
   listen<void>('toggle-launcher', () => cb());
+
+// Hyprland
+export interface WorkspaceInfo {
+  id: number;
+  name: string;
+  monitor: string;
+  windows: number;
+  hasFullscreen: boolean;
+  lastWindow: string;
+}
+
+export interface ActiveWindowInfo {
+  address: string;
+  class: string;
+  title: string;
+  workspaceId: number;
+  workspaceName: string;
+  monitor: string;
+  pid: number;
+  floating: boolean;
+  width: number;
+  height: number;
+  at: [number, number];
+}
+
+export interface MonitorInfo {
+  id: number;
+  name: string;
+  description: string;
+  width: number;
+  height: number;
+  refreshRate: number;
+  x: number;
+  y: number;
+  activeWorkspaceId: number;
+  activeWorkspaceName: string;
+  focused: boolean;
+}
+
+export interface HyprlandStatus {
+  running: boolean;
+  instance: string | null;
+}
+
+export const getHyprlandStatus = () => invoke<HyprlandStatus>('get_hyprland_status');
+export const getWorkspaces = () => invoke<WorkspaceInfo[]>('get_workspaces');
+export const getActiveWindow = () => invoke<ActiveWindowInfo | null>('get_active_window');
+export const getMonitors = () => invoke<MonitorInfo[]>('get_monitors');
+export const switchWorkspace = (id: number) => invoke<void>('switch_workspace', { id });
+export const hyprDispatch = (action: string) => invoke<string>('hypr_dispatch', { action });
+export const generateHyprlandConfig = () => invoke<string>('generate_hyprland_config');
+export const onHyprlandEvent = (cb: (event: { event: string; data: string }) => void) =>
+  listen<{ event: string; data: string }>('hyprland-event', (e) => cb(e.payload));

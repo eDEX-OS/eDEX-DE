@@ -1,6 +1,6 @@
 {
   "name": "edex-de",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "eDEX-DE — sci-fi DE frontend for Hyprland, built with Tauri + Rust + TypeScript + Preact",
   "keywords": [
     "desktop",

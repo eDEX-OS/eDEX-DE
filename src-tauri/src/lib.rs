@@ -3,6 +3,7 @@ use tauri::Emitter;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 mod commands;
+mod hyprland;
 mod pty;
 mod state;
 
@@ -38,6 +39,14 @@ pub fn run() {
         .setup(|app| {
             let alt_space = Shortcut::new(Some(Modifiers::ALT), Code::Space);
             app.global_shortcut().register(alt_space)?;
+
+            if crate::hyprland::ipc::is_hyprland_running() {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    crate::hyprland::ipc::start_event_listener(handle).await;
+                });
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -69,6 +78,13 @@ pub fn run() {
             commands::launcher::search_apps,
             commands::launcher::launch_app,
             commands::launcher::get_hyprland_launcher_bind,
+            commands::hyprland::get_hyprland_status,
+            commands::hyprland::get_workspaces,
+            commands::hyprland::get_active_window,
+            commands::hyprland::get_monitors,
+            commands::hyprland::switch_workspace,
+            commands::hyprland::hypr_dispatch,
+            commands::hyprland::generate_hyprland_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running eDEX-DE");
