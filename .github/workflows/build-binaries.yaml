@@ -1,6 +1,8 @@
-name: Build packaged binaries
+name: Legacy packaged binaries (manual only)
 
-on: [push, pull_request, create]
+# Legacy Electron workflow retained for reference; disabled for the Tauri-based CI/CD pipeline.
+on:
+  workflow_dispatch:
 
 jobs:
   build-linux:

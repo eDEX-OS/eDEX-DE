@@ -6,7 +6,7 @@ interface BootScreenProps {
 }
 
 const BOOT_LINES = [
-  'eDEX-DE v0.9.0',
+  'eDEX-DE v0.10.0',
   'Initializing Rust core...',
   'Loading settings...',
   'Connecting to Hyprland IPC...',
