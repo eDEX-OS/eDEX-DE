@@ -5,6 +5,6 @@ export { Placeholder } from './Placeholder';
 export { TerminalPanel } from './Terminal';
 export { FileList } from './Filesystem';
 export { SysinfoSidebar } from './Sysinfo';
-export { SettingsModal } from './Settings';
+export { SettingsModal, SettingsPanel } from './Settings';
 export { LauncherOverlay } from './Launcher';
 export { PrivacyModal } from './Privacy';

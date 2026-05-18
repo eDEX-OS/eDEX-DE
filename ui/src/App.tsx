@@ -2,21 +2,22 @@ import { useState, useCallback, useEffect } from 'preact/hooks';
 import { SettingsProvider, SysinfoProvider, useSettings } from './context';
 import {
   BootScreen, TopBar, StatusBar,
-  TerminalPanel, FileList, SysinfoSidebar, SettingsModal, LauncherOverlay,
+  TerminalPanel, FileList, SysinfoSidebar, LauncherOverlay, SettingsPanel,
 } from './components';
-import { HyprlandConfigModal } from './components/Settings';
-import { PrivacyModal } from './components/Privacy';
 import { onToggleLauncher } from './ipc';
 import { applyThemeToCssVars } from './utils';
 import './styles/main.css';
+
+type SettingsPage = 'appearance' | 'display' | 'input' | 'audio' | 'network'
+  | 'bluetooth' | 'power' | 'security' | 'users' | 'notifications'
+  | 'services' | 'hyprland' | 'terminal' | 'about';
 
 function AppShell() {
   const { settings, loaded } = useSettings();
   const [booted, setBooted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsPage, setSettingsPage] = useState<SettingsPage>('appearance');
   const [showLauncher, setShowLauncher] = useState(false);
-  const [showHyprConfig, setShowHyprConfig] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
 
   useEffect(() => {
     if (loaded) applyThemeToCssVars(settings.theme);
@@ -34,15 +35,18 @@ function AppShell() {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'S') {
         e.preventDefault();
+        setSettingsPage('appearance');
         setShowSettings((v) => !v);
       }
       if (e.ctrlKey && e.shiftKey && e.key === 'H') {
         e.preventDefault();
-        setShowHyprConfig((v) => !v);
+        setSettingsPage('hyprland');
+        setShowSettings(true);
       }
       if (e.ctrlKey && e.shiftKey && e.key === 'P') {
         e.preventDefault();
-        setShowPrivacy((v) => !v);
+        setSettingsPage('security');
+        setShowSettings(true);
       }
       if (e.altKey && e.code === 'Space') {
         e.preventDefault();
@@ -54,6 +58,11 @@ function AppShell() {
   }, []);
 
   const handleBootComplete = useCallback(() => setBooted(true), []);
+
+  const openPrivacy = useCallback(() => {
+    setSettingsPage('security');
+    setShowSettings(true);
+  }, []);
 
   if (!loaded || !booted) {
     return (
@@ -78,11 +87,14 @@ function AppShell() {
           <SysinfoSidebar />
         </div>
       </div>
-      <StatusBar onOpenPrivacy={() => setShowPrivacy(true)} />
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      <StatusBar onOpenPrivacy={openPrivacy} />
+      {showSettings && (
+        <SettingsPanel
+          initialPage={settingsPage}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
       {showLauncher && <LauncherOverlay onClose={() => setShowLauncher(false)} />}
-      {showHyprConfig && <HyprlandConfigModal onClose={() => setShowHyprConfig(false)} />}
-      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
     </div>
   );
 }

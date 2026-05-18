@@ -42,6 +42,22 @@ pub use systemd::{get_unit_logs, get_unit_status, list_units, unit_action};
 #[allow(unused_imports)]
 pub use update_checker::check_for_update;
 
+pub mod bluetooth;
+pub mod display;
+pub mod power;
+pub mod users;
+pub mod notifications;
+#[allow(unused_imports)]
+pub use bluetooth::{bluetooth_available, bluetooth_list_devices, bluetooth_scan, bluetooth_connect, bluetooth_disconnect, bluetooth_pair, bluetooth_remove};
+#[allow(unused_imports)]
+pub use display::{get_display_info, set_monitor_config, set_keyboard_layout, set_mouse_sensitivity, set_natural_scroll};
+#[allow(unused_imports)]
+pub use power::{get_power_settings, set_power_settings, get_battery_status};
+#[allow(unused_imports)]
+pub use users::{list_users, change_password};
+#[allow(unused_imports)]
+pub use notifications::{get_notification_config, set_notification_config};
+
 pub mod privacy;
 #[allow(unused_imports)]
 pub use privacy::{

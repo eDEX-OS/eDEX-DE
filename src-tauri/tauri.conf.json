@@ -1,6 +1,6 @@
 {
   "productName": "eDEX-DE",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "identifier": "io.edex.de",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -40,7 +40,11 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [],
+    "resources": {
+      "../packaging/edex-de-session.desktop": "edex-de-session.desktop",
+      "../packaging/edex-de-session": "edex-de-session",
+      "../packaging/edex-de-hyprland.conf": "hyprland.conf"
+    },
     "externalBin": [],
     "copyright": "\u00a9 2024 eDEX-DE Contributors",
     "license": "GPL-3.0",
@@ -53,14 +57,26 @@
           "libwebkit2gtk-4.1-0 | libwebkit2gtk-4.0-37",
           "libgtk-3-0",
           "libayatana-appindicator3-1 | libappindicator3-1",
-          "hyprland | sway",
-          "curl"
+          "libssl3 | libssl1.1",
+          "hyprland",
+          "xdg-desktop-portal",
+          "xdg-desktop-portal-hyprland | xdg-desktop-portal-wlr",
+          "pipewire",
+          "wireplumber",
+          "pipewire-pulse | pulseaudio",
+          "wl-clipboard",
+          "mako-notifier | dunst",
+          "swayidle",
+          "policykit-1-gnome | polkit-kde-agent-1 | lxpolkit",
+          "jq"
         ],
         "recommends": [
-          "pipewire-pulse | pulseaudio",
           "network-manager",
           "fprintd",
-          "systemd"
+          "bluez",
+          "tailscale",
+          "tor",
+          "foot | kitty | alacritty"
         ],
         "section": "x11",
         "priority": "optional",
@@ -71,13 +87,26 @@
         "depends": [
           "webkit2gtk4.1 | webkit2gtk4.0",
           "gtk3",
-          "libappindicator-gtk3"
+          "libappindicator-gtk3",
+          "openssl",
+          "hyprland",
+          "xdg-desktop-portal",
+          "xdg-desktop-portal-hyprland",
+          "pipewire",
+          "wireplumber",
+          "pipewire-pulse",
+          "wl-clipboard",
+          "mako",
+          "swayidle",
+          "polkit-kde",
+          "jq"
         ],
         "recommends": [
-          "pipewire-pulse",
           "NetworkManager",
           "fprintd",
-          "systemd"
+          "bluez",
+          "tailscale",
+          "tor"
         ],
         "epoch": 0,
         "release": "1",

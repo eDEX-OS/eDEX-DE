@@ -1,6 +1,15 @@
 use crate::state::AppState;
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, Manager, WindowEvent};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+
+/// Returns true when the app is running as the eDEX-DE Wayland session
+/// (launched by edex-de-session via the display manager).
+fn is_session_mode() -> bool {
+    matches!(
+        std::env::var("XDG_SESSION_DESKTOP").as_deref(),
+        Ok("eDEX-DE") | Ok("edex-de")
+    )
+}
 
 mod commands;
 mod hyprland;
@@ -62,6 +71,17 @@ pub fn run() {
             }
 
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // When running as the DE session, ignore close requests so the
+            // eDEX shell can never be accidentally dismissed via Alt+F4 or
+            // window manager close buttons.
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" && is_session_mode() {
+                    api.prevent_close();
+                    tracing::debug!("CloseRequested ignored — running as eDEX-DE session");
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::greet::greet,
@@ -136,6 +156,30 @@ pub fn run() {
             commands::privacy::vpn_connect,
             commands::privacy::vpn_disconnect,
             commands::privacy::vpn_import_wireguard,
+            // Bluetooth
+            commands::bluetooth::bluetooth_available,
+            commands::bluetooth::bluetooth_list_devices,
+            commands::bluetooth::bluetooth_scan,
+            commands::bluetooth::bluetooth_connect,
+            commands::bluetooth::bluetooth_disconnect,
+            commands::bluetooth::bluetooth_pair,
+            commands::bluetooth::bluetooth_remove,
+            // Display / Input
+            commands::display::get_display_info,
+            commands::display::set_monitor_config,
+            commands::display::set_keyboard_layout,
+            commands::display::set_mouse_sensitivity,
+            commands::display::set_natural_scroll,
+            // Power
+            commands::power::get_power_settings,
+            commands::power::set_power_settings,
+            commands::power::get_battery_status,
+            // Users
+            commands::users::list_users,
+            commands::users::change_password,
+            // Notifications
+            commands::notifications::get_notification_config,
+            commands::notifications::set_notification_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running eDEX-DE");

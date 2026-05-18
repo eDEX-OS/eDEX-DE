@@ -7,7 +7,7 @@ interface BootScreenProps {
 
 const BOOT_LOGO = 'eDEX-DE';
 const BOOT_LINES = [
-  'eDEX-DE v1.1.4',
+  'eDEX-DE v1.2.0',
   'Running Phase 12 documentation sync...',
   'Initializing Rust core services...',
   'Loading Hyprland workspace bindings...',

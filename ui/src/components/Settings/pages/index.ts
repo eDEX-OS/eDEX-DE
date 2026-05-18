@@ -1,0 +1,14 @@
+export { AppearancePage } from './AppearancePage';
+export { DisplayPage } from './DisplayPage';
+export { InputPage } from './InputPage';
+export { AudioPage } from './AudioPage';
+export { NetworkPage } from './NetworkPage';
+export { BluetoothPage } from './BluetoothPage';
+export { PowerPage } from './PowerPage';
+export { SecurityPrivacyPage } from './SecurityPrivacyPage';
+export { UsersPage } from './UsersPage';
+export { NotificationsPage } from './NotificationsPage';
+export { SystemServicesPage } from './SystemServicesPage';
+export { HyprlandPage } from './HyprlandPage';
+export { TerminalPage } from './TerminalPage';
+export { AboutPage } from './AboutPage';
