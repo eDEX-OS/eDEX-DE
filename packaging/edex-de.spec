@@ -1,5 +1,5 @@
 Name:           edex-de
-Version:        1.1.2
+Version:        1.1.3
 Release:        1%{?dist}
 Summary:        Sci-fi themed Wayland Desktop Environment for Hyprland
 
