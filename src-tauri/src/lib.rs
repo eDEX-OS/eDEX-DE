@@ -9,7 +9,7 @@ pub fn run() {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "edex_ui=info".into()),
+                .unwrap_or_else(|_| "edex_de=info".into()),
         )
         .init();
 
@@ -49,5 +49,5 @@ pub fn run() {
             commands::update_checker::check_for_update,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running eDEX-UI");
+        .expect("error while running eDEX-DE");
 }

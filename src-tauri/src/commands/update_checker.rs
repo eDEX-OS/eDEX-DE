@@ -12,13 +12,13 @@ pub struct UpdateInfo {
 #[tauri::command]
 pub async fn check_for_update(current_version: String) -> Result<UpdateInfo, String> {
     let client = reqwest::Client::builder()
-        .user_agent("edex-ui-hyprland/update-checker")
+        .user_agent("edex-de/update-checker")
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .map_err(|e| e.to_string())?;
 
     let response: serde_json::Value = client
-        .get("https://api.github.com/repos/0xnullsect0r/edex-ui-hyprland/releases/latest")
+        .get("https://api.github.com/repos/0xnullsect0r/eDEX-DE/releases/latest")
         .send()
         .await
         .map_err(|e| e.to_string())?

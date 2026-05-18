@@ -1,4 +1,4 @@
-/* eDEX-UI Hyprland — Base Styles */
+/* eDEX-DE — Base Styles */
 :root {
   --color-bg: #0a0c10;
   --color-bg-panel: #0d1117;
@@ -126,3 +126,115 @@ html, body, #app {
 
 /* ── Utility ─────────────────────────────────── */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* ── Terminal ────────────────────────────────── */
+.terminal-panel { display: flex; flex-direction: column; height: 100%; background: #0a0c10; }
+.terminal-tabs { display: flex; align-items: center; background: var(--color-bg-panel); border-bottom: 1px solid var(--color-border); overflow-x: auto; flex-shrink: 0; }
+.terminal-tab { display: flex; align-items: center; gap: 4px; padding: 6px 12px; cursor: pointer; font-size: 11px; color: var(--color-fg-muted); border-right: 1px solid var(--color-border); white-space: nowrap; transition: background var(--transition-fast); }
+.terminal-tab:hover { background: rgba(0,229,255,0.05); }
+.terminal-tab.active { color: var(--color-accent); background: rgba(0,229,255,0.08); border-bottom: 2px solid var(--color-accent); }
+.tab-close { background: none; border: none; color: inherit; cursor: pointer; padding: 0 2px; font-size: 14px; opacity: 0.5; }
+.tab-close:hover { opacity: 1; color: var(--color-error); }
+.tab-new { background: none; border: none; color: var(--color-fg-muted); cursor: pointer; padding: 6px 12px; font-size: 16px; }
+.tab-new:hover { color: var(--color-accent); }
+.terminal-body { flex: 1; overflow: hidden; position: relative; }
+.terminal-pane { position: absolute; inset: 0; display: none; }
+.terminal-pane.active { display: flex; flex-direction: column; }
+.xterm-container { flex: 1; padding: 4px; overflow: hidden; }
+.terminal-connecting { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--color-fg-muted); font-size: 12px; z-index: 10; }
+.terminal-error { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--color-error); font-size: 12px; }
+
+/* ── Filesystem ──────────────────────────────── */
+.filesystem-panel { display: flex; flex-direction: column; height: 100%; }
+.fs-breadcrumb { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
+.fs-up { background: none; border: none; color: var(--color-accent); cursor: pointer; font-size: 14px; }
+.fs-cwd { font-size: 10px; color: var(--color-fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-list { flex: 1; overflow-y: auto; padding: 4px; }
+.fs-entry { display: flex; align-items: center; gap: 6px; padding: 4px 8px; cursor: pointer; border-radius: 2px; font-size: 11px; }
+.fs-entry:hover { background: rgba(0,229,255,0.05); }
+.fs-entry.selected { background: rgba(0,229,255,0.12); color: var(--color-accent); }
+.fs-entry.dir { color: var(--color-accent); }
+.fs-icon { font-size: 12px; flex-shrink: 0; }
+.fs-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-size { color: var(--color-fg-muted); font-size: 10px; flex-shrink: 0; }
+.fs-loading, .fs-error { padding: 16px; text-align: center; color: var(--color-fg-muted); font-size: 11px; }
+.fs-error { color: var(--color-error); }
+
+/* ── Sysinfo Sidebar ─────────────────────────── */
+.sysinfo-sidebar { display: flex; flex-direction: column; height: 100%; }
+.sysinfo-tabs { display: flex; border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
+.sysinfo-tab { flex: 1; background: none; border: none; color: var(--color-fg-muted); cursor: pointer; padding: 6px 4px; font-size: 10px; letter-spacing: 1px; font-family: var(--font-mono); transition: color var(--transition-fast); }
+.sysinfo-tab:hover { color: var(--color-accent); }
+.sysinfo-tab.active { color: var(--color-accent); border-bottom: 2px solid var(--color-accent); }
+.sysinfo-content { flex: 1; overflow-y: auto; }
+.sysinfo-panel { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.sysinfo-header { font-size: 10px; letter-spacing: 2px; color: var(--color-accent); border-bottom: 1px solid var(--color-border); padding-bottom: 4px; }
+.sysinfo-loading { padding: 16px; text-align: center; color: var(--color-fg-muted); font-size: 11px; }
+
+/* Gauges */
+.gauge-bar { flex: 1; height: 6px; background: var(--color-border); border-radius: 3px; overflow: hidden; }
+.gauge-fill { height: 100%; background: linear-gradient(90deg, var(--color-accent), var(--color-secondary)); border-radius: 3px; transition: width 400ms ease; }
+.gauge-fill.swap { background: linear-gradient(90deg, var(--color-warning), var(--color-error)); }
+.gauge-value { font-size: 10px; color: var(--color-accent); min-width: 40px; text-align: right; }
+.gauge-label { font-size: 10px; color: var(--color-fg-muted); min-width: 40px; }
+
+/* CPU */
+.cpu-model { font-size: 10px; color: var(--color-fg-muted); }
+.cpu-cores-label { font-size: 10px; color: var(--color-fg-muted); }
+.cpu-total { display: flex; align-items: center; gap: 6px; }
+.cpu-cores { display: flex; gap: 2px; align-items: flex-end; height: 40px; }
+.core-bar { flex: 1; height: 100%; background: var(--color-border); border-radius: 2px; overflow: hidden; display: flex; align-items: flex-end; }
+.core-fill { width: 100%; background: var(--color-accent); transition: height 400ms ease; border-radius: 2px; }
+
+/* RAM */
+.ram-row { display: flex; align-items: center; gap: 8px; }
+.ram-label { font-size: 10px; color: var(--color-fg-muted); min-width: 30px; }
+.ram-stats { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-fg-muted); }
+
+/* Network */
+.net-iface { margin-bottom: 12px; border-bottom: 1px solid var(--color-border); padding-bottom: 8px; }
+.net-name { font-size: 11px; color: var(--color-accent); margin-bottom: 4px; }
+.net-stats { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px; }
+.net-rx { color: var(--color-secondary); }
+.net-tx { color: var(--color-warning); }
+.net-totals { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-fg-muted); }
+
+/* Processes */
+.process-list { overflow-y: auto; font-size: 10px; }
+.process-header { display: grid; grid-template-columns: 50px 1fr 50px 60px; gap: 4px; color: var(--color-accent); border-bottom: 1px solid var(--color-border); padding-bottom: 4px; margin-bottom: 4px; font-size: 9px; letter-spacing: 1px; }
+.process-row { display: grid; grid-template-columns: 50px 1fr 50px 60px; gap: 4px; padding: 2px 0; color: var(--color-fg-muted); }
+.process-row:hover { color: var(--color-fg); }
+.proc-pid { color: var(--color-fg-muted); }
+.proc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proc-cpu { color: var(--color-secondary); text-align: right; }
+.proc-mem { text-align: right; }
+
+/* Disk */
+.disk-entry { margin-bottom: 12px; }
+.disk-name { font-size: 11px; color: var(--color-fg-muted); margin-bottom: 4px; }
+.disk-stats { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-fg-muted); margin-top: 2px; }
+
+/* ── Modals ───────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modal { background: var(--color-bg-panel); border: 1px solid var(--color-border); border-top: 2px solid var(--color-accent); min-width: 480px; max-width: 600px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: var(--glow-accent); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--color-border); }
+.modal-title { font-size: 13px; color: var(--color-accent); letter-spacing: 3px; }
+.modal-close { background: none; border: none; color: var(--color-fg-muted); font-size: 20px; cursor: pointer; }
+.modal-close:hover { color: var(--color-error); }
+.modal-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--color-border); }
+
+/* Settings form */
+.settings-group { display: flex; flex-direction: column; gap: 4px; }
+.settings-group.settings-toggle { flex-direction: row; align-items: center; justify-content: space-between; }
+.settings-label { font-size: 11px; color: var(--color-fg-muted); letter-spacing: 1px; }
+.settings-input, .settings-select { background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-fg); font-family: var(--font-mono); font-size: 12px; padding: 6px 8px; }
+.settings-input:focus, .settings-select:focus { border-color: var(--color-accent); outline: none; }
+
+/* Buttons */
+.btn { padding: 6px 16px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 1px; cursor: pointer; border: 1px solid; transition: background var(--transition-fast), color var(--transition-fast); }
+.btn-primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-bg); }
+.btn-primary:hover { background: transparent; color: var(--color-accent); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary { background: transparent; border-color: var(--color-border); color: var(--color-fg-muted); }
+.btn-secondary:hover { border-color: var(--color-accent); color: var(--color-accent); }

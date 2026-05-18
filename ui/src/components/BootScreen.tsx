@@ -6,7 +6,7 @@ interface BootScreenProps {
 }
 
 const BOOT_LINES = [
-  'eDEX-UI HYPRLAND v0.3.0',
+  'eDEX-DE v0.4.0',
   'Initializing Rust core...',
   'Loading settings...',
   'Connecting to Hyprland IPC...',
@@ -45,7 +45,7 @@ export function BootScreen({ onComplete, skip = false }: BootScreenProps) {
 
   return (
     <div class="boot-screen">
-      <div class="boot-logo">eDEX-UI</div>
+      <div class="boot-logo">eDEX-DE</div>
       <div class="boot-lines">
         {lines.map((line, index) => (
           <div key={`${line}-${index}`} class="boot-line">

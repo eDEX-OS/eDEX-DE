@@ -1017,8 +1017,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
-name = "edex-ui"
-version = "0.2.0"
+name = "edex-de"
+version = "0.4.0"
 dependencies = [
  "dirs 5.0.1",
  "futures-util",

@@ -1,22 +1,41 @@
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import { useState, useCallback, useEffect } from 'preact/hooks';
 import { SettingsProvider, SysinfoProvider, useSettings } from './context';
-import { BootScreen, TopBar, StatusBar, Placeholder } from './components';
+import {
+  BootScreen, TopBar, StatusBar,
+  TerminalPanel, FileList, SysinfoSidebar, SettingsModal,
+} from './components';
 import { applyThemeToCssVars } from './utils';
 import './styles/main.css';
 
 function AppShell() {
   const { settings, loaded } = useSettings();
   const [booted, setBooted] = useState(false);
-  const handleBootComplete = useCallback(() => setBooted(true), []);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    if (loaded) {
-      applyThemeToCssVars(settings.theme);
-    }
+    if (loaded) applyThemeToCssVars(settings.theme);
   }, [loaded, settings.theme]);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        setShowSettings((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const handleBootComplete = useCallback(() => setBooted(true), []);
+
   if (!loaded || !booted) {
-    return <BootScreen onComplete={handleBootComplete} skip={!loaded ? false : settings.nointro} />;
+    return (
+      <BootScreen
+        onComplete={handleBootComplete}
+        skip={!loaded ? false : settings.nointro}
+      />
+    );
   }
 
   return (
@@ -24,16 +43,17 @@ function AppShell() {
       <TopBar />
       <div class="app-body">
         <div class="panel panel-left">
-          <Placeholder label="Filesystem" description="Phase 4" />
+          <FileList initialPath={settings.cwd} />
         </div>
         <div class="panel panel-center">
-          <Placeholder label="Terminal" description="Phase 4" />
+          <TerminalPanel />
         </div>
         <div class="panel panel-right">
-          <Placeholder label="Sysinfo" description="Phase 4" />
+          <SysinfoSidebar />
         </div>
       </div>
       <StatusBar />
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 {
-  "productName": "eDEX-UI",
-  "version": "0.3.0",
-  "identifier": "io.edex.hyprland",
+  "productName": "eDEX-DE",
+  "version": "0.4.0",
+  "identifier": "io.edex.de",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": "eDEX-UI",
+        "title": "eDEX-DE",
         "width": 1920,
         "height": 1080,
         "fullscreen": false,

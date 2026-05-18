@@ -32,9 +32,7 @@ export function TopBar() {
   return (
     <div class="topbar">
       <div class="topbar-left">
-        <span class="topbar-brand">eDEX-UI</span>
-        <span class="topbar-separator">◆</span>
-        <span class="topbar-hostname">HYPRLAND</span>
+        <span class="topbar-brand">eDEX-DE</span>
       </div>
       <div class="topbar-center">
         <span class="topbar-time">{time}</span>
