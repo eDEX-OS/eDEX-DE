@@ -15,7 +15,7 @@ use smithay::{
         },
         udev::{UdevBackend, UdevEvent},
     },
-    input::keyboard::FilterResult,
+    input::keyboard::{keysyms, FilterResult},
     output::{Mode as OutputMode, Output, PhysicalProperties, Scale, Subpixel},
     reexports::{
         calloop::{
@@ -152,13 +152,62 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Ede
         InputEvent::Keyboard { event } => {
             if let Some(keyboard) = state.seat.get_keyboard() {
                 let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+                let pressed = matches!(event.state(), smithay::backend::input::KeyState::Pressed);
                 keyboard.input::<(), _>(
                     state,
                     event.key_code(),
                     event.state(),
                     serial,
                     event.time_msec(),
-                    |_, _, _| FilterResult::Forward,
+                    |data, modifiers, handle| {
+                        if !pressed {
+                            return FilterResult::Forward;
+                        }
+
+                        let sym = handle
+                            .raw_latin_sym_or_raw_current_sym()
+                            .unwrap_or_else(|| handle.modified_sym());
+
+                        if modifiers.alt && sym == keysyms::KEY_Tab.into() {
+                            data.cycle_focus();
+                            return FilterResult::Intercept(());
+                        }
+
+                        if modifiers.logo {
+                            if matches!(sym, s if s == keysyms::KEY_q.into() || s == keysyms::KEY_Q.into()) {
+                                data.close_focused_window();
+                                return FilterResult::Intercept(());
+                            }
+
+                            let workspace = if sym == keysyms::KEY_1.into() {
+                                Some(1)
+                            } else if sym == keysyms::KEY_2.into() {
+                                Some(2)
+                            } else if sym == keysyms::KEY_3.into() {
+                                Some(3)
+                            } else if sym == keysyms::KEY_4.into() {
+                                Some(4)
+                            } else if sym == keysyms::KEY_5.into() {
+                                Some(5)
+                            } else if sym == keysyms::KEY_6.into() {
+                                Some(6)
+                            } else if sym == keysyms::KEY_7.into() {
+                                Some(7)
+                            } else if sym == keysyms::KEY_8.into() {
+                                Some(8)
+                            } else if sym == keysyms::KEY_9.into() {
+                                Some(9)
+                            } else {
+                                None
+                            };
+                            if let Some(workspace) = workspace {
+                                info!(workspace, "workspace switch stub");
+                                return FilterResult::Intercept(());
+                            }
+                        }
+
+                        FilterResult::Forward
+                    },
                 );
             }
         }

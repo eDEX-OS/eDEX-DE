@@ -7,7 +7,7 @@ use smithay::{
             Client,
         },
     },
-    utils::{Logical, Point, Rectangle, Serial, Size},
+    utils::Serial,
     wayland::{
         compositor::CompositorClientState,
         shell::xdg::{Configure, PopupSurface, PositionerState, ToplevelSurface, XdgShellHandler},
@@ -23,7 +23,8 @@ impl XdgShellHandler for EdexState {
 
     fn new_toplevel(&mut self, surface: ToplevelSurface) {
         let window = Window::new_wayland_window(surface.clone());
-        self.space.map_element(window, (0, 0), true);
+        self.tiling.add_window(&mut self.space, window.clone());
+        self.focus_window(window);
         self.refresh_layout();
     }
 
@@ -89,8 +90,9 @@ impl XdgShellHandler for EdexState {
 
     fn toplevel_destroyed(&mut self, surface: ToplevelSurface) {
         let target = self
-            .space
-            .elements()
+            .tiling
+            .windows
+            .iter()
             .find(|window| {
                 window
                     .toplevel()
@@ -100,62 +102,20 @@ impl XdgShellHandler for EdexState {
             .cloned();
         if let Some(window) = target {
             self.space.unmap_elem(&window);
+            self.tiling.remove_window(&mut self.space, &window);
+            if self.focused_window.as_ref() == Some(&window) {
+                self.focused_window = self.tiling.windows.last().cloned();
+            }
+            if let Some(focused) = self.focused_window.clone() {
+                self.focus_window(focused);
+            }
             self.refresh_layout();
         }
     }
 }
 
 pub fn apply_window_layout(state: &mut EdexState) {
-    let Some(output_geometry) = state.primary_output_geometry() else {
-        return;
-    };
-
-    let windows = state.space.elements().cloned().collect::<Vec<_>>();
-    let window_count = windows.len();
-
-    for (index, window) in windows.iter().enumerate() {
-        let geometry = layout_geometry(output_geometry, window_count, index);
-        state
-            .space
-            .map_element(window.clone(), geometry.loc, index + 1 == window_count);
-        if let Some(toplevel) = window.toplevel() {
-            toplevel.with_pending_state(|pending| {
-                pending.size = Some(geometry.size);
-                pending.states.set(xdg_toplevel::State::Activated);
-                if window_count == 1 {
-                    pending.states.set(xdg_toplevel::State::Fullscreen);
-                } else {
-                    pending.states.unset(xdg_toplevel::State::Fullscreen);
-                }
-            });
-            toplevel.send_configure();
-        }
-    }
-}
-
-fn layout_geometry(
-    output_geometry: Rectangle<i32, Logical>,
-    window_count: usize,
-    index: usize,
-) -> Rectangle<i32, Logical> {
-    if window_count <= 1 {
-        return output_geometry;
-    }
-
-    let cols = (window_count as f64).sqrt().ceil() as i32;
-    let rows = ((window_count as f64) / cols as f64).ceil() as i32;
-    let col = index as i32 % cols;
-    let row = index as i32 / cols;
-    let tile_width = (output_geometry.size.w / cols).max(1);
-    let tile_height = (output_geometry.size.h / rows).max(1);
-
-    Rectangle::new(
-        Point::from((
-            output_geometry.loc.x + col * tile_width,
-            output_geometry.loc.y + row * tile_height,
-        )),
-        Size::from((tile_width, tile_height)),
-    )
+    state.refresh_layout();
 }
 
 pub fn client_compositor_state(client: &Client) -> &CompositorClientState {

@@ -38,6 +38,7 @@ use tracing::info;
 use crate::{
     backend::udev::{init_udev_backend, BackendState},
     shell,
+    shell::tiling::TilingLayout,
 };
 
 pub type CompositorState = EdexState;
@@ -57,6 +58,8 @@ pub struct EdexState {
     pub seat: Seat<Self>,
     pub seat_name: String,
     pub socket_name: Option<OsString>,
+    pub tiling: TilingLayout,
+    pub focused_window: Option<Window>,
     pub loop_signal: LoopSignal,
     pub loop_handle: LoopHandle<'static, CalloopData>,
     pub pointer_location: Point<f64, Logical>,
@@ -141,7 +144,56 @@ impl OutputHandler for EdexState {}
 
 impl EdexState {
     pub fn refresh_layout(&mut self) {
-        shell::xdg::apply_window_layout(self);
+        if let Some(size) = self.primary_output_size() {
+            self.tiling.screen_size = size;
+        }
+        self.tiling.retile(&mut self.space);
+        self.space.refresh();
+    }
+
+    pub fn focus_window(&mut self, window: Window) {
+        self.space.raise_element(&window, true);
+        if let Some(toplevel) = window.toplevel() {
+            if let Some(keyboard) = self.seat.get_keyboard() {
+                keyboard.set_focus(
+                    self,
+                    Some(toplevel.wl_surface().clone()),
+                    smithay::utils::SERIAL_COUNTER.next_serial(),
+                );
+            }
+        }
+        self.focused_window = Some(window);
+    }
+
+    pub fn cycle_focus(&mut self) {
+        if self.tiling.windows.is_empty() {
+            return;
+        }
+
+        let next_index = self
+            .focused_window
+            .as_ref()
+            .and_then(|focused| {
+                self.tiling
+                    .windows
+                    .iter()
+                    .position(|window| window == focused)
+            })
+            .map(|index| (index + 1) % self.tiling.windows.len())
+            .unwrap_or(0);
+
+        if let Some(window) = self.tiling.windows.get(next_index).cloned() {
+            self.focus_window(window);
+            self.refresh_layout();
+        }
+    }
+
+    pub fn close_focused_window(&mut self) {
+        if let Some(window) = self.focused_window.clone() {
+            if let Some(toplevel) = window.toplevel() {
+                toplevel.send_close();
+            }
+        }
     }
 
     pub fn primary_output_geometry(&self) -> Option<Rectangle<i32, Logical>> {
@@ -201,6 +253,8 @@ where
         seat,
         seat_name: "seat0".to_string(),
         socket_name: None,
+        tiling: TilingLayout::new((1920, 1080).into()),
+        focused_window: None,
         loop_signal,
         loop_handle: loop_handle.clone(),
         pointer_location: (0.0, 0.0).into(),
@@ -209,6 +263,9 @@ where
     let backend = init_udev_backend(&mut state, &loop_handle)?;
     for (index, output) in backend.outputs.iter().enumerate() {
         state.space.map_output(output, ((index as i32) * 1920, 0));
+    }
+    if let Some(size) = state.primary_output_size() {
+        state.tiling.screen_size = size;
     }
 
     let socket = ListeningSocketSource::new_auto().context("failed to open wayland socket")?;
