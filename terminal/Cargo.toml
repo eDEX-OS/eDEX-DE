@@ -10,6 +10,8 @@ description = "eDEX-DE terminal emulator (termwiz + portable-pty)"
 [dependencies]
 termwiz = { workspace = true }
 portable-pty = { workspace = true }
+vte = { workspace = true }
+xkbcommon = { workspace = true }
 tracing = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }

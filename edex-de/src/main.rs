@@ -7,9 +7,10 @@ use std::{
 use anyhow::{Context, Result};
 use renderer::{
     ui::{FsEntry, UiState, TRON},
-    wayland_client::LayerShellClient,
+    wayland_client::{KeyEvent, LayerShellClient},
     EdexRenderer,
 };
+use terminal::{key_event_to_bytes, Clipboard, Modifiers, TerminalTabs};
 use tracing::info;
 
 fn main() -> Result<()> {
@@ -49,17 +50,29 @@ fn main() -> Result<()> {
     }
 
     let mut renderer = EdexRenderer::new(layer_client.connection(), layer_client.surface())?;
-    if let Some((width, height)) = layer_client.configured_size() {
-        renderer.resize(width, height);
-    }
+    let mut surface_size = layer_client.configured_size().unwrap_or((1280, 720));
+    renderer.resize(surface_size.0, surface_size.1);
+
+    let (cols, rows) = terminal_dimensions(surface_size.0, surface_size.1);
+    let mut tabs = TerminalTabs::new(cols, rows)?;
+    let clipboard = Clipboard::default();
 
     loop {
         layer_client.dispatch_pending()?;
         if let Some((width, height)) = layer_client.configured_size() {
-            renderer.resize(width, height);
+            if (width, height) != surface_size {
+                surface_size = (width, height);
+                renderer.resize(width, height);
+                let (cols, rows) = terminal_dimensions(width, height);
+                tabs.resize_all(cols, rows)?;
+            }
         }
 
-        let ui_state = sample_ui_state();
+        for event in layer_client.drain_key_events() {
+            handle_key_event(&mut tabs, &clipboard, event, surface_size)?;
+        }
+
+        let ui_state = build_ui_state(tabs.visible_lines());
         renderer.render(&ui_state)?;
         thread::sleep(EdexRenderer::frame_interval());
 
@@ -74,16 +87,12 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn sample_ui_state() -> UiState {
+fn build_ui_state(terminal_content: Vec<String>) -> UiState {
     UiState {
         clock: current_clock_string(),
         hostname: std::env::var("HOSTNAME").unwrap_or_else(|_| "edex-host".to_string()),
         theme: &TRON,
-        terminal_content: vec![
-            "$ smithay compositor: online".to_string(),
-            "$ wgpu renderer: phase 2 active".to_string(),
-            "$ glyphon text atlas: warmed".to_string(),
-        ],
+        terminal_content,
         filesystem_cwd: "/home/aric/edex-ui-hyprland".to_string(),
         filesystem_entries: vec![
             FsEntry {
@@ -92,6 +101,10 @@ fn sample_ui_state() -> UiState {
             },
             FsEntry {
                 name: "renderer/".to_string(),
+                is_dir: true,
+            },
+            FsEntry {
+                name: "terminal/".to_string(),
                 is_dir: true,
             },
             FsEntry {
@@ -104,6 +117,84 @@ fn sample_ui_state() -> UiState {
             },
         ],
     }
+}
+
+fn handle_key_event(
+    tabs: &mut TerminalTabs,
+    clipboard: &Clipboard,
+    event: KeyEvent,
+    surface_size: (u32, u32),
+) -> Result<()> {
+    if !event.pressed {
+        return Ok(());
+    }
+
+    let modifiers = Modifiers {
+        ctrl: event.modifiers.ctrl,
+        alt: event.modifiers.alt,
+        shift: event.modifiers.shift,
+        logo: event.modifiers.logo,
+    };
+
+    if modifiers.ctrl && modifiers.shift && shortcut_is(event.keysym, 't') {
+        let (cols, rows) = terminal_dimensions(surface_size.0, surface_size.1);
+        tabs.new_tab(cols, rows)?;
+        return Ok(());
+    }
+
+    if modifiers.ctrl && modifiers.shift && shortcut_is(event.keysym, 'w') {
+        let active = tabs.active_index();
+        tabs.close_tab(active);
+        return Ok(());
+    }
+
+    if modifiers.ctrl && modifiers.shift && shortcut_is(event.keysym, 'c') {
+        clipboard.copy(&tabs.visible_lines().join("\n"));
+        return Ok(());
+    }
+
+    if modifiers.ctrl && modifiers.shift && shortcut_is(event.keysym, 'v') {
+        if let Some(text) = clipboard.paste() {
+            tabs.write_input(text.as_bytes())?;
+        }
+        return Ok(());
+    }
+
+    if modifiers.alt && !modifiers.ctrl && !modifiers.logo {
+        if let Some(index) = shortcut_tab_index(event.keysym) {
+            tabs.switch(index);
+            return Ok(());
+        }
+    }
+
+    if let Some(bytes) = key_event_to_bytes(event.keysym, &event.text, modifiers) {
+        tabs.write_input(&bytes)?;
+    }
+
+    Ok(())
+}
+
+fn terminal_dimensions(width: u32, height: u32) -> (usize, usize) {
+    const CELL_WIDTH: u32 = 10;
+    const CELL_HEIGHT: u32 = 20;
+    let terminal_height = height.saturating_sub((height / 5).max(120));
+    let cols = (width / CELL_WIDTH).max(40) as usize;
+    let rows = (terminal_height / CELL_HEIGHT).max(16) as usize;
+    (cols, rows)
+}
+
+fn shortcut_is(keysym: u32, expected: char) -> bool {
+    char::from_u32(keysym)
+        .map(|ch| ch.to_ascii_lowercase() == expected)
+        .unwrap_or(false)
+}
+
+fn shortcut_tab_index(keysym: u32) -> Option<usize> {
+    char::from_u32(keysym)
+        .and_then(|ch| ch.to_digit(10))
+        .and_then(|digit| digit.checked_sub(1))
+        .map(|digit| digit as usize)
+        .filter(|index| *index < 9)
 }
 
 fn current_clock_string() -> String {
