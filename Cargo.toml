@@ -45,6 +45,7 @@ wgpu = { version = "29.0.3", features = ["vulkan", "spirv"] }
 glyphon = "0.11.0"
 cosmic-text = "0.12"
 fontdue = "0.9"
+bytemuck = { version = "1", features = ["derive"] }
 
 # Terminal
 termwiz = "0.23.3"
@@ -54,6 +55,7 @@ xkbcommon = { version = "0.9", features = ["wayland"] }
 
 # System info
 sysinfo = "0.39.2"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
 
 # Utilities
 serde = { version = "1", features = ["derive"] }

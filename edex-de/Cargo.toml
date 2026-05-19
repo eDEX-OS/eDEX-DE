@@ -21,3 +21,4 @@ settings = { path = "../settings" }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
+chrono = { workspace = true }

@@ -1,0 +1,7 @@
+name = "tron"
+background = "#0a0e1a"
+panel_bg = "#0d1117"
+border = "#00d4ff"
+text_primary = "#c8e6ff"
+text_secondary = "#7ab5d0"
+accent = "#00ff88"

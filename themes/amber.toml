@@ -1,0 +1,7 @@
+name = "amber"
+background = "#0a0500"
+panel_bg = "#120a00"
+border = "#ff9900"
+text_primary = "#ffcc66"
+text_secondary = "#cc8800"
+accent = "#ffee00"

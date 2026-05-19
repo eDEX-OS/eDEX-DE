@@ -1,23 +1,36 @@
-//! eDEX UI rendering primitives and the Phase 2 GPU renderer.
+//! eDEX UI rendering primitives and the Phase 4 GPU renderer.
 
+pub mod boot;
+pub mod borders;
 pub mod colors;
+pub mod keyboard;
 pub mod panels;
+pub mod resize;
 pub mod state;
+pub mod statusbar;
+pub mod theme;
+pub mod topbar;
 
 use std::{ptr::NonNull, time::Duration};
 
 use anyhow::{anyhow, Context, Result};
+use bytemuck::{Pod, Zeroable};
 use glyphon::{Color, FontSystem, SwashCache, TextAtlas, TextBounds, TextRenderer, Viewport};
 use raw_window_handle::{
     RawDisplayHandle, RawWindowHandle, WaylandDisplayHandle, WaylandWindowHandle,
 };
 use wayland_client::{protocol::wl_surface, Connection, Proxy};
+use wgpu::util::DeviceExt;
 
 use crate::{shaders, text::TextSystem};
 
-pub use colors::{Theme, TRON};
+pub use boot::{BootAnimation, BootPhase};
+pub use colors::{Theme, AMBER, MATRIX, TRON};
+pub use keyboard::{HexKeyboard, KeyDef};
 pub use panels::{PanelLayout, Rectangle};
-pub use state::{FsEntry, UiState};
+pub use resize::{DragTarget, ResizeState};
+pub use state::{FsEntry, StatusInfo, UiState};
+pub use theme::{builtin_theme, parse_color, ThemeConfig, AMBER_TOML, MATRIX_TOML, TRON_TOML};
 
 pub struct EdexRenderer {
     pub instance: wgpu::Instance,
@@ -35,6 +48,46 @@ pub struct EdexRenderer {
     pub height: u32,
     panel_pipeline: wgpu::RenderPipeline,
     scanline_pipeline: wgpu::RenderPipeline,
+    keyboard_pipeline: wgpu::RenderPipeline,
+    boot_pipeline: wgpu::RenderPipeline,
+    uniform_bind_group_layout: wgpu::BindGroupLayout,
+    keyboard: HexKeyboard,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct PanelUniforms {
+    rect: [f32; 4],
+    border_color: [f32; 4],
+    bg_color: [f32; 4],
+    screen_meta: [f32; 4],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct KeyboardUniforms {
+    rect: [f32; 4],
+    border_color: [f32; 4],
+    bg_color: [f32; 4],
+    screen_state: [f32; 4],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct OverlayUniforms {
+    color: [f32; 4],
+}
+
+struct TextSpec {
+    text: String,
+    width: f32,
+    height: f32,
+    font_size: f32,
+    line_height: f32,
+    left: f32,
+    top: f32,
+    bounds: TextBounds,
+    color: Color,
 }
 
 impl EdexRenderer {
@@ -106,19 +159,38 @@ impl EdexRenderer {
             renderer: text_renderer,
         } = TextSystem::new(&device, &queue, surface_config.format);
 
+        let uniform_bind_group_layout = create_uniform_bind_group_layout(&device);
         let panel_pipeline = create_pipeline(
             &device,
             &surface_config,
             &shaders::panel(&device),
-            Some("fs_panel"),
-            Some(wgpu::BlendState::REPLACE),
+            "fs_panel",
+            Some(wgpu::BlendState::ALPHA_BLENDING),
+            &[Some(&uniform_bind_group_layout)],
         );
         let scanline_pipeline = create_pipeline(
             &device,
             &surface_config,
             &shaders::scanline(&device),
-            Some("fs_scanline"),
+            "fs_scanline",
             Some(wgpu::BlendState::ALPHA_BLENDING),
+            &[],
+        );
+        let keyboard_pipeline = create_pipeline(
+            &device,
+            &surface_config,
+            &shaders::keyboard(&device),
+            "fs_keyboard",
+            Some(wgpu::BlendState::ALPHA_BLENDING),
+            &[Some(&uniform_bind_group_layout)],
+        );
+        let boot_pipeline = create_pipeline(
+            &device,
+            &surface_config,
+            &shaders::boot(&device),
+            "fs_overlay",
+            Some(wgpu::BlendState::ALPHA_BLENDING),
+            &[Some(&uniform_bind_group_layout)],
         );
 
         Ok(Self {
@@ -137,6 +209,10 @@ impl EdexRenderer {
             height,
             panel_pipeline,
             scanline_pipeline,
+            keyboard_pipeline,
+            boot_pipeline,
+            uniform_bind_group_layout,
+            keyboard: HexKeyboard::new(),
         })
     }
 
@@ -161,7 +237,7 @@ impl EdexRenderer {
             return Ok(());
         }
 
-        let layout = PanelLayout::from_size(self.width, self.height);
+        let layout = PanelLayout::from_state(self.width, self.height, state.resize);
         self.viewport.update(
             &self.queue,
             glyphon::Resolution {
@@ -170,8 +246,9 @@ impl EdexRenderer {
             },
         );
 
-        let text_buffers = self.build_text_buffers(state, layout);
-        let text_areas = self.build_text_areas(&text_buffers, state, layout);
+        let text_specs = self.build_text_specs(state, layout);
+        let text_buffers = self.build_text_buffers(&text_specs);
+        let text_areas = self.build_text_areas(&text_buffers, &text_specs);
         self.text_renderer
             .prepare(
                 &self.device,
@@ -208,6 +285,9 @@ impl EdexRenderer {
                 label: Some("eDEX-DE frame encoder"),
             });
 
+        let mut uniform_buffers = Vec::with_capacity(96);
+        let mut uniform_bind_groups = Vec::with_capacity(96);
+
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("eDEX-DE render pass"),
@@ -235,12 +315,150 @@ impl EdexRenderer {
                 layout.status_bar,
                 layout.keyboard,
             ] {
-                draw_rect(&mut render_pass, rect);
+                let uniforms = PanelUniforms {
+                    rect: rect_to_uniform(rect),
+                    border_color: state.theme.border,
+                    bg_color: state.theme.panel_bg,
+                    screen_meta: [
+                        self.width as f32,
+                        self.height as f32,
+                        state.border_anim,
+                        1.0,
+                    ],
+                };
+                draw_uniform_rect(
+                    &self.device,
+                    &mut render_pass,
+                    &self.uniform_bind_group_layout,
+                    rect,
+                    &uniforms,
+                    &mut uniform_buffers,
+                    &mut uniform_bind_groups,
+                );
+            }
+
+            for (rect, intensity) in [
+                (
+                    layout.fs_terminal_handle,
+                    state.resize.handle_color_intensity(DragTarget::FsTerminal),
+                ),
+                (
+                    layout.terminal_sysinfo_handle,
+                    state
+                        .resize
+                        .handle_color_intensity(DragTarget::TerminalSysinfo),
+                ),
+            ] {
+                let handle_uniforms = PanelUniforms {
+                    rect: rect_to_uniform(rect),
+                    border_color: state.theme.border,
+                    bg_color: [
+                        state.theme.border_glow[0],
+                        state.theme.border_glow[1],
+                        state.theme.border_glow[2],
+                        0.2 + 0.25 * intensity,
+                    ],
+                    screen_meta: [
+                        self.width as f32,
+                        self.height as f32,
+                        state.border_anim,
+                        1.1,
+                    ],
+                };
+                draw_uniform_rect(
+                    &self.device,
+                    &mut render_pass,
+                    &self.uniform_bind_group_layout,
+                    rect,
+                    &handle_uniforms,
+                    &mut uniform_buffers,
+                    &mut uniform_bind_groups,
+                );
+
+                let grab_rect = ResizeState::grab_indicator(rect);
+                let grab_uniforms = PanelUniforms {
+                    rect: rect_to_uniform(grab_rect),
+                    border_color: state.theme.accent,
+                    bg_color: [
+                        state.theme.accent[0],
+                        state.theme.accent[1],
+                        state.theme.accent[2],
+                        0.18,
+                    ],
+                    screen_meta: [
+                        self.width as f32,
+                        self.height as f32,
+                        state.border_anim + 0.5,
+                        1.0,
+                    ],
+                };
+                draw_uniform_rect(
+                    &self.device,
+                    &mut render_pass,
+                    &self.uniform_bind_group_layout,
+                    grab_rect,
+                    &grab_uniforms,
+                    &mut uniform_buffers,
+                    &mut uniform_bind_groups,
+                );
+            }
+
+            render_pass.set_pipeline(&self.keyboard_pipeline);
+            for (row_idx, row) in self.keyboard.rows.iter().enumerate() {
+                for (col_idx, _) in row.iter().enumerate() {
+                    let rect = self.keyboard.key_rect(&layout.keyboard, row_idx, col_idx);
+                    let hover = if self.keyboard.hover_key == Some((row_idx, col_idx)) {
+                        1.0
+                    } else {
+                        0.0
+                    };
+                    let pressed = if self.keyboard.pressed_key == Some((row_idx, col_idx)) {
+                        1.0
+                    } else {
+                        0.0
+                    };
+                    let uniforms = KeyboardUniforms {
+                        rect: rect_to_uniform(rect),
+                        border_color: state.theme.border,
+                        bg_color: [
+                            state.theme.panel_bg[0] * 0.9,
+                            state.theme.panel_bg[1] * 0.9,
+                            state.theme.panel_bg[2] * 1.1,
+                            1.0,
+                        ],
+                        screen_state: [self.width as f32, self.height as f32, hover, pressed],
+                    };
+                    draw_uniform_rect(
+                        &self.device,
+                        &mut render_pass,
+                        &self.uniform_bind_group_layout,
+                        rect,
+                        &uniforms,
+                        &mut uniform_buffers,
+                        &mut uniform_bind_groups,
+                    );
+                }
             }
 
             render_pass.set_pipeline(&self.scanline_pipeline);
             render_pass.set_scissor_rect(0, 0, self.width, self.height);
             render_pass.draw(0..4, 0..1);
+
+            if state.boot_overlay_alpha > 0.0 {
+                render_pass.set_pipeline(&self.boot_pipeline);
+                let overlay_uniforms = OverlayUniforms {
+                    color: [0.0, 0.0, 0.0, state.boot_overlay_alpha],
+                };
+                draw_uniform_rect(
+                    &self.device,
+                    &mut render_pass,
+                    &self.uniform_bind_group_layout,
+                    Rectangle::new(0, 0, self.width, self.height),
+                    &overlay_uniforms,
+                    &mut uniform_buffers,
+                    &mut uniform_bind_groups,
+                );
+            }
 
             self.text_renderer
                 .render(&self.atlas, &self.viewport, &mut render_pass)
@@ -253,9 +471,9 @@ impl EdexRenderer {
         Ok(())
     }
 
-    fn build_text_buffers(&mut self, state: &UiState, layout: PanelLayout) -> Vec<glyphon::Buffer> {
-        let top_bar_text = format!(" {} ", state.clock);
-        let title = "eDEX-DE";
+    fn build_text_specs(&self, state: &UiState, layout: PanelLayout) -> Vec<TextSpec> {
+        let top_bar = topbar::compose(state);
+        let status_bar = statusbar::compose(&state.status);
         let terminal_text = if state.terminal_content.is_empty() {
             "$ renderer online\n$ awaiting shell output".to_string()
         } else {
@@ -278,135 +496,195 @@ impl EdexRenderer {
                 .join("\n")
         );
         let sysinfo_text = format!(
-            "HOST   {}\nGPU    Vulkan / wgpu\nPANELS filesystem | terminal | sysinfo\nFPS    target 60",
-            state.hostname
-        );
-        let keyboard_text = "HEX KEYBOARD // PHASE 2 VISUAL FOUNDATION";
-
-        let clock_buffer = TextSystem::make_buffer(
-            &mut self.font_system,
-            220.0,
-            layout.top_bar.height as f32,
-            &top_bar_text,
-            22.0,
-            28.0,
-        );
-        let title_buffer = TextSystem::make_buffer(
-            &mut self.font_system,
-            240.0,
-            layout.top_bar.height as f32,
-            title,
-            24.0,
-            30.0,
-        );
-        let terminal_buffer = TextSystem::make_buffer(
-            &mut self.font_system,
-            layout.terminal.width as f32 - 32.0,
-            layout.terminal.height as f32 - 32.0,
-            &terminal_text,
-            18.0,
-            24.0,
-        );
-        let filesystem_buffer = TextSystem::make_buffer(
-            &mut self.font_system,
-            layout.filesystem.width as f32 - 32.0,
-            layout.filesystem.height as f32 - 32.0,
-            &filesystem_text,
-            16.0,
-            22.0,
-        );
-        let sysinfo_buffer = TextSystem::make_buffer(
-            &mut self.font_system,
-            layout.sysinfo.width as f32 - 32.0,
-            layout.sysinfo.height as f32 - 32.0,
-            &sysinfo_text,
-            16.0,
-            22.0,
-        );
-        let keyboard_buffer = TextSystem::make_buffer(
-            &mut self.font_system,
-            layout.keyboard.width as f32 - 32.0,
-            layout.keyboard.height as f32 - 32.0,
-            keyboard_text,
-            18.0,
-            24.0,
+            "HOST       {}\nGPU        Vulkan / wgpu\nTABS       {}/{}\nBORDER FX  {:.2}\nAUDIO      {}%\nNETWORK    ▲ {:.1} / ▼ {:.1} kb/s",
+            state.hostname,
+            state.active_tab.saturating_add(1),
+            state.tab_count.max(1),
+            state.border_anim,
+            state.status.volume,
+            state.status.net_tx_kbps,
+            state.status.net_rx_kbps,
         );
 
-        let buffers = vec![
-            clock_buffer,
-            title_buffer,
-            terminal_buffer,
-            filesystem_buffer,
-            sysinfo_buffer,
-            keyboard_buffer,
+        let mut specs = vec![
+            TextSpec {
+                text: top_bar.left,
+                width: (layout.top_bar.width / 3) as f32,
+                height: layout.top_bar.height as f32,
+                font_size: 18.0,
+                line_height: 24.0,
+                left: 16.0,
+                top: (layout.top_bar.y + 9) as f32,
+                bounds: bounds_for(layout.top_bar),
+                color: to_glyphon_color(state.theme.text_primary),
+            },
+            TextSpec {
+                text: top_bar.center,
+                width: 220.0,
+                height: layout.top_bar.height as f32,
+                font_size: 28.0,
+                line_height: 32.0,
+                left: (self.width as f32 * 0.5) - 74.0,
+                top: (layout.top_bar.y + 4) as f32,
+                bounds: bounds_for(layout.top_bar),
+                color: to_glyphon_color(state.theme.border),
+            },
+            TextSpec {
+                text: top_bar.right,
+                width: (layout.top_bar.width / 3) as f32,
+                height: layout.top_bar.height as f32,
+                font_size: 18.0,
+                line_height: 24.0,
+                left: self.width as f32 - 320.0,
+                top: (layout.top_bar.y + 9) as f32,
+                bounds: bounds_for(layout.top_bar),
+                color: to_glyphon_color(state.theme.text_secondary),
+            },
+            TextSpec {
+                text: status_bar,
+                width: layout.status_bar.width as f32 - 32.0,
+                height: layout.status_bar.height as f32,
+                font_size: 14.0,
+                line_height: 18.0,
+                left: 16.0,
+                top: (layout.status_bar.y + 6) as f32,
+                bounds: bounds_for(layout.status_bar),
+                color: to_glyphon_color(state.theme.text_secondary),
+            },
+            TextSpec {
+                text: terminal_text,
+                width: layout.terminal.width as f32 - 32.0,
+                height: layout.terminal.height as f32 - 32.0,
+                font_size: 18.0,
+                line_height: 24.0,
+                left: (layout.terminal.x + 16) as f32,
+                top: (layout.terminal.y + 16) as f32,
+                bounds: bounds_for(layout.terminal),
+                color: to_glyphon_color(state.theme.text_primary),
+            },
+            TextSpec {
+                text: filesystem_text,
+                width: layout.filesystem.width as f32 - 32.0,
+                height: layout.filesystem.height as f32 - 32.0,
+                font_size: 16.0,
+                line_height: 22.0,
+                left: (layout.filesystem.x + 16) as f32,
+                top: (layout.filesystem.y + 16) as f32,
+                bounds: bounds_for(layout.filesystem),
+                color: to_glyphon_color(state.theme.text_secondary),
+            },
+            TextSpec {
+                text: sysinfo_text,
+                width: layout.sysinfo.width as f32 - 32.0,
+                height: layout.sysinfo.height as f32 - 32.0,
+                font_size: 16.0,
+                line_height: 22.0,
+                left: (layout.sysinfo.x + 16) as f32,
+                top: (layout.sysinfo.y + 16) as f32,
+                bounds: bounds_for(layout.sysinfo),
+                color: to_glyphon_color(state.theme.text_secondary),
+            },
         ];
 
-        buffers
+        for (row_idx, row) in self.keyboard.rows.iter().enumerate() {
+            for (col_idx, key) in row.iter().enumerate() {
+                let rect = self.keyboard.key_rect(&layout.keyboard, row_idx, col_idx);
+                let font_size = if key.label.len() > 5 { 10.0 } else { 12.0 };
+                let approx_width = key.label.chars().count() as f32 * font_size * 0.32;
+                specs.push(TextSpec {
+                    text: key.label.to_string(),
+                    width: rect.width as f32,
+                    height: rect.height as f32,
+                    font_size,
+                    line_height: rect.height as f32,
+                    left: rect.x as f32 + rect.width as f32 * 0.5 - approx_width,
+                    top: rect.y as f32 + rect.height as f32 * 0.22,
+                    bounds: bounds_for(rect),
+                    color: to_glyphon_color(state.theme.text_primary),
+                });
+            }
+        }
+
+        if !state.boot_done && !state.boot_lines.is_empty() {
+            specs.push(TextSpec {
+                text: state.boot_lines.join("\n"),
+                width: self.width as f32 - 120.0,
+                height: self.height as f32 - 120.0,
+                font_size: 18.0,
+                line_height: 24.0,
+                left: 48.0,
+                top: 72.0,
+                bounds: TextBounds {
+                    left: 32,
+                    top: 32,
+                    right: self.width as i32 - 32,
+                    bottom: self.height as i32 - 32,
+                },
+                color: to_glyphon_color(state.theme.text_primary),
+            });
+        }
+
+        specs
+    }
+
+    fn build_text_buffers(&mut self, specs: &[TextSpec]) -> Vec<glyphon::Buffer> {
+        specs
+            .iter()
+            .map(|spec| {
+                TextSystem::make_buffer(
+                    &mut self.font_system,
+                    spec.width,
+                    spec.height,
+                    &spec.text,
+                    spec.font_size,
+                    spec.line_height,
+                )
+            })
+            .collect()
     }
 
     fn build_text_areas<'a>(
         &self,
         buffers: &'a [glyphon::Buffer],
-        state: &UiState,
-        layout: PanelLayout,
+        specs: &[TextSpec],
     ) -> Vec<glyphon::TextArea<'a>> {
-        vec![
-            TextSystem::default_area(
-                &buffers[0],
-                20.0,
-                (layout.top_bar.y + 8) as f32,
-                bounds_for(layout.top_bar),
-                to_glyphon_color(state.theme.text_primary),
-            ),
-            TextSystem::default_area(
-                &buffers[1],
-                (self.width as f32 * 0.5) - 60.0,
-                (layout.top_bar.y + 6) as f32,
-                bounds_for(layout.top_bar),
-                to_glyphon_color(state.theme.border),
-            ),
-            TextSystem::default_area(
-                &buffers[2],
-                (layout.terminal.x + 16) as f32,
-                (layout.terminal.y + 16) as f32,
-                bounds_for(layout.terminal),
-                to_glyphon_color(state.theme.text_primary),
-            ),
-            TextSystem::default_area(
-                &buffers[3],
-                (layout.filesystem.x + 16) as f32,
-                (layout.filesystem.y + 16) as f32,
-                bounds_for(layout.filesystem),
-                to_glyphon_color(state.theme.text_secondary),
-            ),
-            TextSystem::default_area(
-                &buffers[4],
-                (layout.sysinfo.x + 16) as f32,
-                (layout.sysinfo.y + 16) as f32,
-                bounds_for(layout.sysinfo),
-                to_glyphon_color(state.theme.text_secondary),
-            ),
-            TextSystem::default_area(
-                &buffers[5],
-                (layout.keyboard.x + 16) as f32,
-                (layout.keyboard.y + 16) as f32,
-                bounds_for(layout.keyboard),
-                to_glyphon_color(state.theme.accent),
-            ),
-        ]
+        buffers
+            .iter()
+            .zip(specs.iter())
+            .map(|(buffer, spec)| {
+                TextSystem::default_area(buffer, spec.left, spec.top, spec.bounds, spec.color)
+            })
+            .collect()
     }
+}
+
+fn create_uniform_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some("eDEX-DE uniform bind group layout"),
+        entries: &[wgpu::BindGroupLayoutEntry {
+            binding: 0,
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
+            count: None,
+        }],
+    })
 }
 
 fn create_pipeline(
     device: &wgpu::Device,
     surface_config: &wgpu::SurfaceConfiguration,
     shader: &wgpu::ShaderModule,
-    fragment_entry: Option<&str>,
+    fragment_entry: &str,
     blend: Option<wgpu::BlendState>,
+    bind_group_layouts: &[Option<&wgpu::BindGroupLayout>],
 ) -> wgpu::RenderPipeline {
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("eDEX-DE pipeline layout"),
-        bind_group_layouts: &[],
+        bind_group_layouts,
         immediate_size: 0,
     });
 
@@ -432,7 +710,7 @@ fn create_pipeline(
         multisample: wgpu::MultisampleState::default(),
         fragment: Some(wgpu::FragmentState {
             module: shader,
-            entry_point: fragment_entry,
+            entry_point: Some(fragment_entry),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             targets: &[Some(wgpu::ColorTargetState {
                 format: surface_config.format,
@@ -445,9 +723,47 @@ fn create_pipeline(
     })
 }
 
-fn draw_rect(render_pass: &mut wgpu::RenderPass<'_>, rect: Rectangle) {
+fn draw_uniform_rect<T: Pod>(
+    device: &wgpu::Device,
+    render_pass: &mut wgpu::RenderPass<'_>,
+    bind_group_layout: &wgpu::BindGroupLayout,
+    rect: Rectangle,
+    uniforms: &T,
+    uniform_buffers: &mut Vec<wgpu::Buffer>,
+    uniform_bind_groups: &mut Vec<wgpu::BindGroup>,
+) {
+    let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("eDEX-DE uniform buffer"),
+        contents: bytemuck::bytes_of(uniforms),
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+    });
+    let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("eDEX-DE uniform bind group"),
+        layout: bind_group_layout,
+        entries: &[wgpu::BindGroupEntry {
+            binding: 0,
+            resource: buffer.as_entire_binding(),
+        }],
+    });
+
+    uniform_buffers.push(buffer);
+    uniform_bind_groups.push(bind_group);
+    render_pass.set_bind_group(
+        0,
+        uniform_bind_groups.last().expect("bind group exists"),
+        &[],
+    );
     render_pass.set_scissor_rect(rect.x, rect.y, rect.width.max(1), rect.height.max(1));
     render_pass.draw(0..4, 0..1);
+}
+
+fn rect_to_uniform(rect: Rectangle) -> [f32; 4] {
+    [
+        rect.x as f32,
+        rect.y as f32,
+        rect.width.max(1) as f32,
+        rect.height.max(1) as f32,
+    ]
 }
 
 fn theme_color(value: [f32; 4]) -> wgpu::Color {

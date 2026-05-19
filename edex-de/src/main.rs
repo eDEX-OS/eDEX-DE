@@ -1,12 +1,9 @@
-use std::{
-    sync::mpsc,
-    thread,
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
+use std::{fs, sync::mpsc, thread};
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
+use chrono::Local;
 use renderer::{
-    ui::{FsEntry, UiState, TRON},
+    ui::{builtin_theme, BootAnimation, FsEntry, ResizeState, StatusInfo, UiState},
     wayland_client::{KeyEvent, LayerShellClient},
     EdexRenderer,
 };
@@ -35,7 +32,7 @@ fn main() -> Result<()> {
         .context("failed to spawn compositor thread")?;
 
     let socket_name = socket_rx
-        .recv_timeout(Duration::from_secs(5))
+        .recv_timeout(EdexRenderer::frame_interval() * 300)
         .context("timed out waiting for compositor Wayland socket")?;
     std::env::set_var("WAYLAND_DISPLAY", &socket_name);
     info!(socket = ?socket_name, "renderer connecting to compositor socket");
@@ -46,7 +43,7 @@ fn main() -> Result<()> {
         if layer_client.configured_size().is_some() {
             break;
         }
-        thread::sleep(Duration::from_millis(16));
+        thread::sleep(EdexRenderer::frame_interval());
     }
 
     let mut renderer = EdexRenderer::new(layer_client.connection(), layer_client.surface())?;
@@ -56,6 +53,11 @@ fn main() -> Result<()> {
     let (cols, rows) = terminal_dimensions(surface_size.0, surface_size.1);
     let mut tabs = TerminalTabs::new(cols, rows)?;
     let clipboard = Clipboard::default();
+    let hostname = read_hostname();
+    let theme = builtin_theme("tron")?;
+    let mut boot_anim = BootAnimation::new();
+    let mut boot_done = false;
+    let mut border_anim = 0.0_f32;
 
     loop {
         layer_client.dispatch_pending()?;
@@ -72,14 +74,28 @@ fn main() -> Result<()> {
             handle_key_event(&mut tabs, &clipboard, event, surface_size)?;
         }
 
-        let ui_state = build_ui_state(tabs.visible_lines());
+        if !boot_done {
+            boot_done = boot_anim.update();
+        }
+        border_anim = (border_anim + 0.016) % std::f32::consts::TAU;
+
+        let ui_state = build_ui_state(UiStateInput {
+            theme,
+            hostname: &hostname,
+            terminal_content: tabs.visible_lines(),
+            tab_count: tabs.len(),
+            active_tab: tabs.active_index(),
+            boot_done,
+            boot_anim: &boot_anim,
+            border_anim,
+        });
         renderer.render(&ui_state)?;
         thread::sleep(EdexRenderer::frame_interval());
 
         if compositor_thread.is_finished() {
             compositor_thread
                 .join()
-                .map_err(|_| anyhow::anyhow!("compositor thread panicked"))??;
+                .map_err(|_| anyhow!("compositor thread panicked"))??;
             break;
         }
     }
@@ -87,12 +103,24 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn build_ui_state(terminal_content: Vec<String>) -> UiState {
+struct UiStateInput<'a> {
+    theme: &'static renderer::ui::Theme,
+    hostname: &'a str,
+    terminal_content: Vec<String>,
+    tab_count: usize,
+    active_tab: usize,
+    boot_done: bool,
+    boot_anim: &'a BootAnimation,
+    border_anim: f32,
+}
+
+fn build_ui_state(input: UiStateInput<'_>) -> UiState {
     UiState {
         clock: current_clock_string(),
-        hostname: std::env::var("HOSTNAME").unwrap_or_else(|_| "edex-host".to_string()),
-        theme: &TRON,
-        terminal_content,
+        date: current_date_string(),
+        hostname: input.hostname.to_string(),
+        theme: input.theme,
+        terminal_content: input.terminal_content,
         filesystem_cwd: "/home/aric/edex-ui-hyprland".to_string(),
         filesystem_entries: vec![
             FsEntry {
@@ -112,10 +140,26 @@ fn build_ui_state(terminal_content: Vec<String>) -> UiState {
                 is_dir: true,
             },
             FsEntry {
+                name: "themes/".to_string(),
+                is_dir: true,
+            },
+            FsEntry {
                 name: "Cargo.toml".to_string(),
                 is_dir: false,
             },
         ],
+        boot_done: input.boot_done,
+        boot_lines: if input.boot_done {
+            Vec::new()
+        } else {
+            input.boot_anim.current_lines().to_vec()
+        },
+        boot_overlay_alpha: input.boot_anim.overlay_alpha(),
+        border_anim: input.border_anim,
+        resize: ResizeState::default(),
+        tab_count: input.tab_count,
+        active_tab: input.active_tab,
+        status: StatusInfo::default(),
     }
 }
 
@@ -198,13 +242,18 @@ fn shortcut_tab_index(keysym: u32) -> Option<usize> {
 }
 
 fn current_clock_string() -> String {
-    let elapsed = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-    let day_seconds = elapsed % 86_400;
-    let hours = day_seconds / 3_600;
-    let minutes = (day_seconds % 3_600) / 60;
-    let seconds = day_seconds % 60;
-    format!("{hours:02}:{minutes:02}:{seconds:02}")
+    Local::now().format("%H:%M:%S").to_string()
+}
+
+fn current_date_string() -> String {
+    Local::now().format("%Y-%m-%d").to_string()
+}
+
+fn read_hostname() -> String {
+    fs::read_to_string("/etc/hostname")
+        .map(|content| content.trim().to_string())
+        .ok()
+        .filter(|hostname| !hostname.is_empty())
+        .or_else(|| std::env::var("HOSTNAME").ok())
+        .unwrap_or_else(|| "edex-host".to_string())
 }

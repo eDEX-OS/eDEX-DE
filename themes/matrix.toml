@@ -1,0 +1,7 @@
+name = "matrix"
+background = "#000a00"
+panel_bg = "#001500"
+border = "#00ff41"
+text_primary = "#00ff41"
+text_secondary = "#00aa2a"
+accent = "#80ff80"
