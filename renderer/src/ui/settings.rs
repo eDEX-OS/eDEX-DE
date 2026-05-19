@@ -21,9 +21,9 @@ pub const CATEGORIES: &[&str] = &[
 
 #[derive(Debug, Clone)]
 pub struct AppearanceSettings {
-    pub theme_index: usize,   // 0=tron, 1=matrix, 2=amber
-    pub border_glow: f32,     // 0.0–1.0
-    pub font_size: u32,       // 10–24
+    pub theme_index: usize, // 0=tron, 1=matrix, 2=amber
+    pub border_glow: f32,   // 0.0–1.0
+    pub font_size: u32,     // 10–24
 }
 
 impl Default for AppearanceSettings {
@@ -70,7 +70,7 @@ impl Default for InputSettings {
 
 #[derive(Debug, Clone)]
 pub struct AudioSettings {
-    pub volume: u32,   // 0–100
+    pub volume: u32, // 0–100
     pub muted: bool,
 }
 
@@ -185,7 +185,7 @@ impl Default for CompositorSettings {
 pub struct TerminalSettings {
     pub shell: String,
     pub scrollback: u32,
-    pub cursor_style: usize,   // 0=block, 1=underline, 2=bar
+    pub cursor_style: usize, // 0=block, 1=underline, 2=bar
     pub font_size: u32,
 }
 
@@ -206,7 +206,7 @@ impl Default for TerminalSettings {
 pub struct SettingsPanel {
     pub active: bool,
     pub selected_category: usize,
-    pub focus_right: bool,   // false = sidebar focused, true = content pane focused
+    pub focus_right: bool, // false = sidebar focused, true = content pane focused
 
     // Per-category state
     pub appearance: AppearanceSettings,
@@ -284,8 +284,14 @@ impl SettingsPanel {
     pub fn category_content(&self) -> Vec<(&'static str, String)> {
         match self.selected_category {
             0 => vec![
-                ("Theme", ["Tron", "Matrix", "Amber"][self.appearance.theme_index].to_string()),
-                ("Border Glow", format!("{:.0}%", self.appearance.border_glow * 100.0)),
+                (
+                    "Theme",
+                    ["Tron", "Matrix", "Amber"][self.appearance.theme_index].to_string(),
+                ),
+                (
+                    "Border Glow",
+                    format!("{:.0}%", self.appearance.border_glow * 100.0),
+                ),
                 ("Font Size", format!("{}pt", self.appearance.font_size)),
             ],
             1 => vec![
@@ -294,7 +300,10 @@ impl SettingsPanel {
             ],
             2 => vec![
                 ("Keyboard Layout", self.input.kb_layout.clone()),
-                ("Mouse Sensitivity", format!("{:.1}", self.input.mouse_sensitivity)),
+                (
+                    "Mouse Sensitivity",
+                    format!("{:.1}", self.input.mouse_sensitivity),
+                ),
                 ("Scroll Speed", format!("{:.1}", self.input.scroll_speed)),
             ],
             3 => vec![
@@ -302,42 +311,81 @@ impl SettingsPanel {
                 ("Muted", self.audio.muted.to_string()),
             ],
             4 => vec![
-                ("Wi-Fi", if self.network.wifi_enabled { "Enabled".to_string() } else { "Disabled".to_string() }),
-                ("Active Connection", if self.network.active_connection.is_empty() { "None".to_string() } else { self.network.active_connection.clone() }),
+                (
+                    "Wi-Fi",
+                    if self.network.wifi_enabled {
+                        "Enabled".to_string()
+                    } else {
+                        "Disabled".to_string()
+                    },
+                ),
+                (
+                    "Active Connection",
+                    if self.network.active_connection.is_empty() {
+                        "None".to_string()
+                    } else {
+                        self.network.active_connection.clone()
+                    },
+                ),
             ],
-            5 => vec![
-                ("Bluetooth", if self.bluetooth.enabled { "Enabled".to_string() } else { "Disabled".to_string() }),
-            ],
+            5 => vec![(
+                "Bluetooth",
+                if self.bluetooth.enabled {
+                    "Enabled".to_string()
+                } else {
+                    "Disabled".to_string()
+                },
+            )],
             6 => vec![
                 ("Screen Blank", format!("{}s", self.power.screen_blank_secs)),
                 ("Suspend After", format!("{}s", self.power.suspend_secs)),
-                ("Hibernate on Low Battery", self.power.hibernate_on_low.to_string()),
+                (
+                    "Hibernate on Low Battery",
+                    self.power.hibernate_on_low.to_string(),
+                ),
             ],
             7 => vec![
-                ("Lock Timeout", format!("{}s", self.security.lock_timeout_secs)),
+                (
+                    "Lock Timeout",
+                    format!("{}s", self.security.lock_timeout_secs),
+                ),
                 ("Tailscale VPN", self.security.tailscale_enabled.to_string()),
                 ("WireGuard VPN", self.security.wireguard_enabled.to_string()),
                 ("Tor", self.security.tor_enabled.to_string()),
             ],
-            8 => vec![
-                ("User", self.users.display_name.clone()),
-            ],
+            8 => vec![("User", self.users.display_name.clone())],
             9 => vec![
-                ("Do Not Disturb", self.notifications.do_not_disturb.to_string()),
-                ("History Limit", self.notifications.history_limit.to_string()),
+                (
+                    "Do Not Disturb",
+                    self.notifications.do_not_disturb.to_string(),
+                ),
+                (
+                    "History Limit",
+                    self.notifications.history_limit.to_string(),
+                ),
             ],
-            10 => vec![
-                ("Active Services", self.services.service_list.len().to_string()),
-            ],
+            10 => vec![(
+                "Active Services",
+                self.services.service_list.len().to_string(),
+            )],
             11 => vec![
-                ("Border Width", format!("{}px", self.compositor.border_width)),
+                (
+                    "Border Width",
+                    format!("{}px", self.compositor.border_width),
+                ),
                 ("Gap Size", format!("{}px", self.compositor.gap_size)),
-                ("Animation Speed", format!("{:.1}x", self.compositor.animation_speed)),
+                (
+                    "Animation Speed",
+                    format!("{:.1}x", self.compositor.animation_speed),
+                ),
             ],
             12 => vec![
                 ("Shell", self.terminal.shell.clone()),
                 ("Scrollback Lines", self.terminal.scrollback.to_string()),
-                ("Cursor Style", ["Block", "Underline", "Bar"][self.terminal.cursor_style].to_string()),
+                (
+                    "Cursor Style",
+                    ["Block", "Underline", "Bar"][self.terminal.cursor_style].to_string(),
+                ),
                 ("Font Size", format!("{}pt", self.terminal.font_size)),
             ],
             13 => {
@@ -356,7 +404,10 @@ impl SettingsPanel {
                     ("Hostname", hostname),
                     ("Kernel", kernel),
                     ("License", "GPL-3.0".to_string()),
-                    ("Repository", "https://github.com/eDEX-OS/eDEX-DE".to_string()),
+                    (
+                        "Repository",
+                        "https://github.com/eDEX-OS/eDEX-DE".to_string(),
+                    ),
                 ]
             }
             _ => vec![],

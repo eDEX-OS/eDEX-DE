@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eDEX-DE — Sci-Fi Wayland Desktop Environment</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <header>
+        <div class="logo">
+            <span class="logo-edex">eDEX</span><span class="logo-de">-DE</span>
+        </div>
+        <p class="tagline">A sci-fi Wayland desktop environment — built in pure Rust</p>
+        <div class="header-links">
+            <a href="https://github.com/eDEX-OS/eDEX-DE" class="btn btn-primary">GitHub</a>
+            <a href="https://github.com/eDEX-OS/eDEX-DE/releases/latest" class="btn btn-secondary">Latest Release</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Features -->
+        <section id="features">
+            <h2 class="section-title">// FEATURES</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🖥️</span>
+                    <h3>Full Wayland Compositor</h3>
+                    <p>Built on smithay — DRM/KMS, libinput, XDG-shell. No Hyprland, no X11 required.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🎨</span>
+                    <h3>eDEX-UI Faithful Aesthetic</h3>
+                    <p>3-panel sci-fi layout, glowing cyan borders, animated hex keyboard. Tron, Matrix, and Amber themes.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">💻</span>
+                    <h3>Built-in Terminal</h3>
+                    <p>PTY-backed terminal emulator with multi-tab support, ANSI/VT100 rendering, and clipboard.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📊</span>
+                    <h3>System Dashboard</h3>
+                    <p>Live CPU, RAM, network, disk, and process stats rendered directly in the UI.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🚀</span>
+                    <h3>App Launcher</h3>
+                    <p>Alt+Space fuzzy app launcher scanning XDG .desktop files across all standard paths.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🪟</span>
+                    <h3>Tiling Window Manager</h3>
+                    <p>Smart tiling: 0 apps → eDEX fullscreen; 1 app → fullscreen; 2+ → equal columns. No escape from eDEX.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">⚙️</span>
+                    <h3>Settings Panel</h3>
+                    <p>14-category settings UI — appearance, display, input, audio, network, security, terminal, and more.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🔒</span>
+                    <h3>Privacy Indicators</h3>
+                    <p>Live status bar indicators for Tailscale, WireGuard, Tor, fprintd, microphone, and camera.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Install -->
+        <section id="install">
+            <h2 class="section-title">// INSTALLATION</h2>
+            <div class="install-grid">
+                <div class="install-card">
+                    <h3>Arch Linux (AUR)</h3>
+                    <pre><code>yay -S edex-de</code></pre>
+                    <p>Then log out and select <strong>eDEX-DE</strong> from your display manager.</p>
+                </div>
+                <div class="install-card">
+                    <h3>Debian / Ubuntu</h3>
+                    <pre><code>sudo dpkg -i edex-de-*-amd64.deb</code></pre>
+                    <a href="https://github.com/eDEX-OS/eDEX-DE/releases/latest" class="btn btn-secondary small">Download .deb</a>
+                </div>
+                <div class="install-card">
+                    <h3>Fedora / RHEL</h3>
+                    <pre><code>sudo rpm -i edex-de-*.x86_64.rpm</code></pre>
+                    <a href="https://github.com/eDEX-OS/eDEX-DE/releases/latest" class="btn btn-secondary small">Download .rpm</a>
+                </div>
+                <div class="install-card">
+                    <h3>From Source</h3>
+                    <pre><code>cargo build --release -p edex-de
+sudo install -Dm755 \
+  target/release/edex-de \
+  /usr/bin/edex-de</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Keybindings -->
+        <section id="keybindings">
+            <h2 class="section-title">// KEYBOARD SHORTCUTS</h2>
+            <table class="keybindings-table">
+                <thead>
+                    <tr><th>Shortcut</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><kbd>Alt+Space</kbd></td><td>App launcher</td></tr>
+                    <tr><td><kbd>Alt+Tab</kbd></td><td>Cycle window focus</td></tr>
+                    <tr><td><kbd>Super+Q</kbd></td><td>Close focused window</td></tr>
+                    <tr><td><kbd>Super+1–9</kbd></td><td>Switch workspace</td></tr>
+                    <tr><td><kbd>Super+,</kbd></td><td>Open settings</td></tr>
+                    <tr><td><kbd>Super+L</kbd></td><td>Lock screen</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Stack -->
+        <section id="stack">
+            <h2 class="section-title">// TECH STACK</h2>
+            <div class="stack-list">
+                <div class="stack-item"><span class="stack-name">smithay</span><span class="stack-desc">Wayland compositor (DRM/KMS, libinput, XDG-shell)</span></div>
+                <div class="stack-item"><span class="stack-name">wgpu</span><span class="stack-desc">GPU-accelerated rendering via Vulkan + WGSL shaders</span></div>
+                <div class="stack-item"><span class="stack-name">glyphon</span><span class="stack-desc">wgpu text rendering with cosmic-text layout</span></div>
+                <div class="stack-item"><span class="stack-name">portable-pty</span><span class="stack-desc">PTY management for the terminal emulator</span></div>
+                <div class="stack-item"><span class="stack-name">sysinfo</span><span class="stack-desc">Cross-platform system statistics</span></div>
+                <div class="stack-item"><span class="stack-name">xkbcommon</span><span class="stack-desc">Keyboard layout and keysym handling</span></div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>eDEX-DE is <a href="https://github.com/eDEX-OS/eDEX-DE/blob/master/LICENSE">GPL-3.0</a> licensed.</p>
+        <p>Inspired by <a href="https://github.com/GitSquared/edex-ui">eDEX-UI</a> by GitSquared.</p>
+    </footer>
+</body>
+</html>

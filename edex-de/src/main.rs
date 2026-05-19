@@ -505,8 +505,7 @@ fn format_bytes(bytes: u64) -> String {
 
 fn crash_log_path() -> std::path::PathBuf {
     let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-    std::path::PathBuf::from(home)
-        .join(".local/share/edex-de/crash.log")
+    std::path::PathBuf::from(home).join(".local/share/edex-de/crash.log")
 }
 
 fn install_panic_handler() {

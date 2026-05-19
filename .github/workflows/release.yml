@@ -124,13 +124,15 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
           VERSION_NO_V="${VERSION#v}"
+          # RPM does not allow '-' in Version; replace with '~' (pre-release convention)
+          RPM_VERSION="${VERSION_NO_V//-/~}"
           mkdir -p rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
           install -Dm755 target/${{ matrix.target }}/release/${{ env.BINARY_NAME }} \
             rpmbuild/BUILD/edex-de
 
           cat > rpmbuild/SPECS/edex-de.spec << SPEC
           Name:           edex-de
-          Version:        ${VERSION_NO_V}
+          Version:        ${RPM_VERSION}
           Release:        1%{?dist}
           Summary:        eDEX-DE — A sci-fi Wayland desktop environment
           License:        GPL-3.0
@@ -158,6 +160,7 @@ jobs:
             --define "_builddir $(pwd)/rpmbuild/BUILD" \
             -bb rpmbuild/SPECS/edex-de.spec
           find rpmbuild/RPMS -name "*.rpm" -exec mv {} "edex-de-${VERSION_NO_V}.x86_64.rpm" \;
+
 
       - name: Package tarball
         run: |
