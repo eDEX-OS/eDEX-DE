@@ -168,6 +168,13 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Ede
                             .raw_latin_sym_or_raw_current_sym()
                             .unwrap_or_else(|| handle.modified_sym());
 
+                        if modifiers.alt && sym == keysyms::KEY_space.into() {
+                            if let Ok(mut open) = data.launcher_open.lock() {
+                                *open = true;
+                            }
+                            return FilterResult::Intercept(());
+                        }
+
                         if modifiers.alt && sym == keysyms::KEY_Tab.into() {
                             data.cycle_focus();
                             return FilterResult::Intercept(());

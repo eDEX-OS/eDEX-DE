@@ -1,6 +1,6 @@
 use std::{
     fs,
-    sync::mpsc,
+    sync::{mpsc, Arc, Mutex},
     thread,
     time::{Duration, Instant},
 };
@@ -9,8 +9,8 @@ use anyhow::{anyhow, Context, Result};
 use chrono::Local;
 use renderer::{
     ui::{
-        builtin_theme, BootAnimation, DiskDisplay, FilesystemPanel, PanelLayout, ProcDisplay,
-        ResizeState, StatusInfo, SysInfo, UiState,
+        builtin_theme, BootAnimation, DiskDisplay, FilesystemPanel, LauncherResult, LauncherState,
+        PanelLayout, ProcDisplay, ResizeState, StatusInfo, SysInfo, UiState,
     },
     wayland_client::{KeyEvent, LayerShellClient},
     EdexRenderer,
@@ -19,8 +19,8 @@ use sysmon::{SysSnapshot, SysmonCollector};
 use terminal::{key_event_to_bytes, Clipboard, Modifiers, TerminalTabs};
 use tracing::info;
 use xkbcommon::xkb::keysyms::{
-    KEY_BackSpace as KEY_BACK_SPACE, KEY_Down as KEY_DOWN, KEY_KP_Enter as KEY_KP_ENTER,
-    KEY_Return as KEY_RETURN, KEY_Up as KEY_UP,
+    KEY_BackSpace as KEY_BACK_SPACE, KEY_Down as KEY_DOWN, KEY_Escape as KEY_ESCAPE,
+    KEY_KP_Enter as KEY_KP_ENTER, KEY_Return as KEY_RETURN, KEY_Up as KEY_UP,
 };
 
 fn main() -> Result<()> {
@@ -34,13 +34,18 @@ fn main() -> Result<()> {
     info!("eDEX-DE v{}", env!("CARGO_PKG_VERSION"));
     info!("Initializing compositor + renderer threads...");
 
+    let launcher_open = Arc::new(Mutex::new(false));
+    let launcher_signal = Arc::clone(&launcher_open);
     let (socket_tx, socket_rx) = mpsc::channel();
     let compositor_thread = thread::Builder::new()
         .name("edex-compositor".to_string())
         .spawn(move || {
-            compositor::run_compositor_with_socket_notifier(move |socket_name| {
-                let _ = socket_tx.send(socket_name);
-            })
+            compositor::run_compositor_with_socket_notifier_and_launcher_flag(
+                move |socket_name| {
+                    let _ = socket_tx.send(socket_name);
+                },
+                launcher_signal,
+            )
         })
         .context("failed to spawn compositor thread")?;
 
@@ -80,6 +85,10 @@ fn main() -> Result<()> {
     let mut collector = SysmonCollector::new();
     let mut sys_snapshot = collector.snapshot();
     let mut last_sys_refresh = Instant::now();
+    let apps = launcher::scan_applications();
+    let searcher = launcher::AppSearch::new();
+    let mut launcher_state = LauncherState::default();
+    let mut launcher_matches = refresh_launcher_results(&mut launcher_state, &searcher, &apps);
 
     loop {
         layer_client.dispatch_pending()?;
@@ -95,8 +104,23 @@ fn main() -> Result<()> {
         let layout = PanelLayout::from_size(surface_size.0, surface_size.1);
         filesystem.set_panel_height(layout.filesystem.height);
 
+        if take_launcher_flag(&launcher_open) {
+            launcher_state.open();
+            launcher_matches = refresh_launcher_results(&mut launcher_state, &searcher, &apps);
+        }
+
         for event in layer_client.drain_key_events() {
-            handle_key_event(&mut tabs, &clipboard, &mut filesystem, event, surface_size)?;
+            handle_key_event(
+                &mut tabs,
+                &clipboard,
+                &mut filesystem,
+                &mut launcher_state,
+                &mut launcher_matches,
+                &searcher,
+                &apps,
+                event,
+                surface_size,
+            )?;
         }
 
         if last_sys_refresh.elapsed() >= Duration::from_secs(1) {
@@ -118,6 +142,7 @@ fn main() -> Result<()> {
             active_tab: tabs.active_index(),
             filesystem: &filesystem,
             sys_snapshot: &sys_snapshot,
+            launcher: &launcher_state,
             boot_done,
             boot_anim: &boot_anim,
             border_anim,
@@ -144,6 +169,7 @@ struct UiStateInput<'a> {
     active_tab: usize,
     filesystem: &'a FilesystemPanel,
     sys_snapshot: &'a SysSnapshot,
+    launcher: &'a LauncherState,
     boot_done: bool,
     boot_anim: &'a BootAnimation,
     border_anim: f32,
@@ -160,6 +186,7 @@ fn build_ui_state(input: UiStateInput<'_>) -> UiState {
         filesystem_entries: input.filesystem.to_ui_entries(),
         selected_fs_entry: input.filesystem.selected_visible_index(),
         sysinfo: build_sysinfo(input.sys_snapshot),
+        launcher: input.launcher.clone(),
         boot_done: input.boot_done,
         boot_lines: if input.boot_done {
             Vec::new()
@@ -228,10 +255,15 @@ fn build_sysinfo(snapshot: &SysSnapshot) -> SysInfo {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn handle_key_event(
     tabs: &mut TerminalTabs,
     clipboard: &Clipboard,
     filesystem: &mut FilesystemPanel,
+    launcher_state: &mut LauncherState,
+    launcher_matches: &mut Vec<launcher::AppEntry>,
+    searcher: &launcher::AppSearch,
+    apps: &[launcher::AppEntry],
     event: KeyEvent,
     surface_size: (u32, u32),
 ) -> Result<()> {
@@ -245,6 +277,52 @@ fn handle_key_event(
         shift: event.modifiers.shift,
         logo: event.modifiers.logo,
     };
+
+    if launcher_state.visible {
+        if !modifiers.ctrl && !modifiers.alt && !modifiers.logo {
+            match event.keysym {
+                KEY_ESCAPE => {
+                    launcher_state.close();
+                    return Ok(());
+                }
+                KEY_UP => {
+                    launcher_state.move_up();
+                    return Ok(());
+                }
+                KEY_DOWN => {
+                    launcher_state.move_down();
+                    return Ok(());
+                }
+                KEY_BACK_SPACE => {
+                    launcher_state.pop_char();
+                    *launcher_matches = refresh_launcher_results(launcher_state, searcher, apps);
+                    return Ok(());
+                }
+                KEY_RETURN | KEY_KP_ENTER => {
+                    if let Some(app) = launcher_matches.get(launcher_state.selected).cloned() {
+                        launcher::launch_app(&app)?;
+                    }
+                    launcher_state.close();
+                    return Ok(());
+                }
+                _ => {}
+            }
+        }
+
+        if !modifiers.ctrl && !modifiers.logo {
+            let mut changed = false;
+            for ch in event.text.chars().filter(|ch| !ch.is_control()) {
+                launcher_state.push_char(ch);
+                changed = true;
+            }
+            if changed {
+                *launcher_matches = refresh_launcher_results(launcher_state, searcher, apps);
+                return Ok(());
+            }
+        }
+
+        return Ok(());
+    }
 
     if modifiers.ctrl && modifiers.shift && shortcut_is(event.keysym, 't') {
         let (cols, rows) = terminal_dimensions(surface_size.0, surface_size.1);
@@ -309,6 +387,40 @@ fn handle_key_event(
     }
 
     Ok(())
+}
+
+fn refresh_launcher_results(
+    launcher_state: &mut LauncherState,
+    searcher: &launcher::AppSearch,
+    apps: &[launcher::AppEntry],
+) -> Vec<launcher::AppEntry> {
+    let matches = searcher
+        .search(&launcher_state.query, apps)
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    launcher_state.results = matches
+        .iter()
+        .map(|app| LauncherResult {
+            name: app.name.clone(),
+            comment: app.comment.clone(),
+            icon: app.icon.clone(),
+        })
+        .collect();
+    if launcher_state.selected >= launcher_state.results.len() {
+        launcher_state.selected = 0;
+    }
+    matches
+}
+
+fn take_launcher_flag(flag: &Arc<Mutex<bool>>) -> bool {
+    if let Ok(mut open) = flag.lock() {
+        let was_open = *open;
+        *open = false;
+        was_open
+    } else {
+        false
+    }
 }
 
 fn terminal_dimensions(width: u32, height: u32) -> (usize, usize) {

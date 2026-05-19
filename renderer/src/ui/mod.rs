@@ -5,6 +5,7 @@ pub mod borders;
 pub mod colors;
 pub mod filesystem;
 pub mod keyboard;
+pub mod launcher;
 pub mod panels;
 pub mod resize;
 pub mod state;
@@ -29,6 +30,7 @@ pub use boot::{BootAnimation, BootPhase};
 pub use colors::{Theme, AMBER, MATRIX, TRON};
 pub use filesystem::FilesystemPanel;
 pub use keyboard::{HexKeyboard, KeyDef};
+pub use launcher::{LauncherResult, LauncherState};
 pub use panels::{PanelLayout, Rectangle};
 pub use resize::{DragTarget, ResizeState};
 pub use state::{DiskDisplay, FsEntry, ProcDisplay, StatusInfo, SysInfo, UiState};
@@ -657,6 +659,49 @@ impl EdexRenderer {
                     color: to_glyphon_color(state.theme.text_primary),
                 });
             }
+        }
+
+        if state.launcher.visible {
+            let launcher_text = format!(
+                "LAUNCHER\n> {}\n\n{}",
+                state.launcher.query,
+                state
+                    .launcher
+                    .results
+                    .iter()
+                    .enumerate()
+                    .map(|(index, result)| {
+                        let marker = if index == state.launcher.selected {
+                            '>'
+                        } else {
+                            ' '
+                        };
+                        match &result.comment {
+                            Some(comment) => {
+                                format!("{} {} — {}", marker, result.name, comment)
+                            }
+                            None => format!("{} {}", marker, result.name),
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            );
+            specs.push(TextSpec {
+                text: launcher_text,
+                width: self.width as f32 * 0.55,
+                height: self.height as f32 * 0.45,
+                font_size: 20.0,
+                line_height: 28.0,
+                left: self.width as f32 * 0.22,
+                top: self.height as f32 * 0.18,
+                bounds: TextBounds {
+                    left: (self.width as f32 * 0.2) as i32,
+                    top: (self.height as f32 * 0.14) as i32,
+                    right: (self.width as f32 * 0.8) as i32,
+                    bottom: (self.height as f32 * 0.7) as i32,
+                },
+                color: to_glyphon_color(state.theme.text_primary),
+            });
         }
 
         if !state.boot_done && !state.boot_lines.is_empty() {

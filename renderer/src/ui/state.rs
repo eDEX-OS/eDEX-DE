@@ -1,4 +1,4 @@
-use super::{colors::Theme, resize::ResizeState};
+use super::{colors::Theme, launcher::LauncherState, resize::ResizeState};
 
 #[derive(Clone, Debug)]
 pub struct FsEntry {
@@ -74,6 +74,7 @@ pub struct UiState {
     pub filesystem_entries: Vec<FsEntry>,
     pub selected_fs_entry: usize,
     pub sysinfo: SysInfo,
+    pub launcher: LauncherState,
     pub boot_done: bool,
     pub boot_lines: Vec<String>,
     pub boot_overlay_alpha: f32,

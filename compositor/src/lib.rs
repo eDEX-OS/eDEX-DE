@@ -8,5 +8,6 @@ pub mod shell;
 pub mod state;
 
 pub use state::{
-    run_compositor, run_compositor_with_socket_notifier, CalloopData, CompositorState, EdexState,
+    run_compositor, run_compositor_with_socket_notifier,
+    run_compositor_with_socket_notifier_and_launcher_flag, CalloopData, CompositorState, EdexState,
 };
