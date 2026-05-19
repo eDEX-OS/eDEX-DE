@@ -157,6 +157,13 @@ impl EdexState {
 }
 
 pub fn run_compositor() -> Result<()> {
+    run_compositor_with_socket_notifier(|_| {})
+}
+
+pub fn run_compositor_with_socket_notifier<F>(on_socket_ready: F) -> Result<()>
+where
+    F: FnOnce(OsString) + Send + 'static,
+{
     let event_loop = Box::new(
         EventLoop::<CalloopData>::try_new().context("failed to create calloop event loop")?,
     );
@@ -209,6 +216,7 @@ pub fn run_compositor() -> Result<()> {
     state.socket_name = Some(socket_name.clone());
     std::env::set_var("WAYLAND_DISPLAY", &socket_name);
     info!(socket = ?socket_name, "wayland socket ready");
+    on_socket_ready(socket_name.clone());
 
     loop_handle
         .insert_source(socket, |client_stream, _, data| {

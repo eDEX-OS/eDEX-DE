@@ -7,4 +7,6 @@ pub mod backend;
 pub mod shell;
 pub mod state;
 
-pub use state::{run_compositor, CalloopData, CompositorState, EdexState};
+pub use state::{
+    run_compositor, run_compositor_with_socket_notifier, CalloopData, CompositorState, EdexState,
+};

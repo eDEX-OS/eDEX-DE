@@ -36,6 +36,9 @@ smithay = { version = "0.7.0", features = [
 # smithay-drm-extras = "0.1.0"  # Added in Phase 1 when EDID support is implemented
 calloop = { version = "0.14", features = ["futures-io"] }
 wayland-server = "0.31"
+wayland-client = "0.31"
+wayland-protocols-wlr = { version = "0.3", features = ["client"] }
+raw-window-handle = "0.6"
 
 # GPU / Rendering
 wgpu = { version = "29.0.3", features = ["vulkan", "spirv"] }
