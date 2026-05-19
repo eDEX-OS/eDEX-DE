@@ -19,6 +19,7 @@ terminal = { path = "../terminal" }
 launcher = { path = "../launcher" }
 settings = { path = "../settings" }
 sysmon = { path = "../sysmon" }
+notifications = { path = "../notifications" }
 tracing = { workspace = true }
 xkbcommon = { workspace = true }
 tracing-subscriber = { workspace = true }

@@ -195,7 +195,8 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Ede
 
                             if sym == keysyms::KEY_l.into() || sym == keysyms::KEY_L.into() {
                                 // Super+L: screen lock stub (future: ext-session-lock)
-                                tracing::info!("screen lock requested (stub)");
+                                data.lock_screen = true;
+                                tracing::info!("screen lock requested");
                                 return FilterResult::Intercept(());
                             }
 

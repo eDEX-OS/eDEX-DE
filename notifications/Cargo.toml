@@ -1,0 +1,13 @@
+[package]
+name = "notifications"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "eDEX-DE in-process notification store"
+
+[dependencies]
+serde = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }

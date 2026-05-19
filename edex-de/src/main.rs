@@ -25,6 +25,9 @@ use xkbcommon::xkb::keysyms::{
 };
 
 fn main() -> Result<()> {
+    install_panic_handler();
+    check_crash_log();
+
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -497,5 +500,40 @@ fn format_bytes(bytes: u64) -> String {
         format!("{:.1} KiB", bytes as f64 / BYTES_PER_KIB as f64)
     } else {
         format!("{} B", bytes)
+    }
+}
+
+fn crash_log_path() -> std::path::PathBuf {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
+    std::path::PathBuf::from(home)
+        .join(".local/share/edex-de/crash.log")
+}
+
+fn install_panic_handler() {
+    let original = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let log_path = crash_log_path();
+        if let Some(parent) = log_path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let msg = format!(
+            "[{}] PANIC: {}\n",
+            chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+            info
+        );
+        let _ = std::fs::write(&log_path, &msg);
+        original(info);
+    }));
+}
+
+fn check_crash_log() {
+    let log_path = crash_log_path();
+    if log_path.exists() {
+        tracing::warn!(
+            "eDEX-DE recovered from a previous crash. Log: {}",
+            log_path.display()
+        );
+        // Rename so it doesn't re-trigger on next normal launch
+        let _ = std::fs::rename(&log_path, log_path.with_extension("log.old"));
     }
 }
