@@ -3,12 +3,19 @@ use std::{fs, sync::mpsc, thread};
 use anyhow::{anyhow, Context, Result};
 use chrono::Local;
 use renderer::{
-    ui::{builtin_theme, BootAnimation, FsEntry, ResizeState, StatusInfo, UiState},
+    ui::{
+        builtin_theme, BootAnimation, FilesystemPanel, PanelLayout, ResizeState, StatusInfo,
+        UiState,
+    },
     wayland_client::{KeyEvent, LayerShellClient},
     EdexRenderer,
 };
 use terminal::{key_event_to_bytes, Clipboard, Modifiers, TerminalTabs};
 use tracing::info;
+use xkbcommon::xkb::keysyms::{
+    KEY_BackSpace as KEY_BACK_SPACE, KEY_Down as KEY_DOWN, KEY_KP_Enter as KEY_KP_ENTER,
+    KEY_Return as KEY_RETURN, KEY_Up as KEY_UP,
+};
 
 fn main() -> Result<()> {
     tracing_subscriber::fmt()
@@ -58,6 +65,12 @@ fn main() -> Result<()> {
     let mut boot_anim = BootAnimation::new();
     let mut boot_done = false;
     let mut border_anim = 0.0_f32;
+    let mut filesystem = FilesystemPanel::new();
+    filesystem.set_panel_height(
+        PanelLayout::from_size(surface_size.0, surface_size.1)
+            .filesystem
+            .height,
+    );
 
     loop {
         layer_client.dispatch_pending()?;
@@ -70,8 +83,11 @@ fn main() -> Result<()> {
             }
         }
 
+        let layout = PanelLayout::from_size(surface_size.0, surface_size.1);
+        filesystem.set_panel_height(layout.filesystem.height);
+
         for event in layer_client.drain_key_events() {
-            handle_key_event(&mut tabs, &clipboard, event, surface_size)?;
+            handle_key_event(&mut tabs, &clipboard, &mut filesystem, event, surface_size)?;
         }
 
         if !boot_done {
@@ -85,6 +101,7 @@ fn main() -> Result<()> {
             terminal_content: tabs.visible_lines(),
             tab_count: tabs.len(),
             active_tab: tabs.active_index(),
+            filesystem: &filesystem,
             boot_done,
             boot_anim: &boot_anim,
             border_anim,
@@ -109,6 +126,7 @@ struct UiStateInput<'a> {
     terminal_content: Vec<String>,
     tab_count: usize,
     active_tab: usize,
+    filesystem: &'a FilesystemPanel,
     boot_done: bool,
     boot_anim: &'a BootAnimation,
     border_anim: f32,
@@ -121,33 +139,9 @@ fn build_ui_state(input: UiStateInput<'_>) -> UiState {
         hostname: input.hostname.to_string(),
         theme: input.theme,
         terminal_content: input.terminal_content,
-        filesystem_cwd: "/home/aric/edex-ui-hyprland".to_string(),
-        filesystem_entries: vec![
-            FsEntry {
-                name: "compositor/".to_string(),
-                is_dir: true,
-            },
-            FsEntry {
-                name: "renderer/".to_string(),
-                is_dir: true,
-            },
-            FsEntry {
-                name: "terminal/".to_string(),
-                is_dir: true,
-            },
-            FsEntry {
-                name: "edex-de/".to_string(),
-                is_dir: true,
-            },
-            FsEntry {
-                name: "themes/".to_string(),
-                is_dir: true,
-            },
-            FsEntry {
-                name: "Cargo.toml".to_string(),
-                is_dir: false,
-            },
-        ],
+        filesystem_cwd: input.filesystem.breadcrumbs().join(" / "),
+        filesystem_entries: input.filesystem.to_ui_entries(),
+        selected_fs_entry: input.filesystem.selected_visible_index(),
         boot_done: input.boot_done,
         boot_lines: if input.boot_done {
             Vec::new()
@@ -166,6 +160,7 @@ fn build_ui_state(input: UiStateInput<'_>) -> UiState {
 fn handle_key_event(
     tabs: &mut TerminalTabs,
     clipboard: &Clipboard,
+    filesystem: &mut FilesystemPanel,
     event: KeyEvent,
     surface_size: (u32, u32),
 ) -> Result<()> {
@@ -202,6 +197,33 @@ fn handle_key_event(
             tabs.write_input(text.as_bytes())?;
         }
         return Ok(());
+    }
+
+    if modifiers.ctrl && modifiers.shift && shortcut_is(event.keysym, 'h') {
+        filesystem.toggle_dotfiles();
+        return Ok(());
+    }
+
+    if !modifiers.ctrl && !modifiers.alt && !modifiers.logo {
+        match event.keysym {
+            KEY_UP => {
+                filesystem.navigate_up();
+                return Ok(());
+            }
+            KEY_DOWN => {
+                filesystem.navigate_down();
+                return Ok(());
+            }
+            KEY_RETURN | KEY_KP_ENTER => {
+                filesystem.enter_selected();
+                return Ok(());
+            }
+            KEY_BACK_SPACE => {
+                filesystem.go_parent();
+                return Ok(());
+            }
+            _ => {}
+        }
     }
 
     if modifiers.alt && !modifiers.ctrl && !modifiers.logo {

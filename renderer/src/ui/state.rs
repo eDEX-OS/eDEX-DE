@@ -42,6 +42,7 @@ pub struct UiState {
     pub terminal_content: Vec<String>,
     pub filesystem_cwd: String,
     pub filesystem_entries: Vec<FsEntry>,
+    pub selected_fs_entry: usize,
     pub boot_done: bool,
     pub boot_lines: Vec<String>,
     pub boot_overlay_alpha: f32,

@@ -19,6 +19,7 @@ terminal = { path = "../terminal" }
 launcher = { path = "../launcher" }
 settings = { path = "../settings" }
 tracing = { workspace = true }
+xkbcommon = { workspace = true }
 tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
 chrono = { workspace = true }

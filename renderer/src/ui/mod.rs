@@ -3,6 +3,7 @@
 pub mod boot;
 pub mod borders;
 pub mod colors;
+pub mod filesystem;
 pub mod keyboard;
 pub mod panels;
 pub mod resize;
@@ -26,6 +27,7 @@ use crate::{shaders, text::TextSystem};
 
 pub use boot::{BootAnimation, BootPhase};
 pub use colors::{Theme, AMBER, MATRIX, TRON};
+pub use filesystem::FilesystemPanel;
 pub use keyboard::{HexKeyboard, KeyDef};
 pub use panels::{PanelLayout, Rectangle};
 pub use resize::{DragTarget, ResizeState};
@@ -485,12 +487,14 @@ impl EdexRenderer {
             state
                 .filesystem_entries
                 .iter()
-                .map(|entry| {
-                    if entry.is_dir {
-                        format!("[dir] {}", entry.name)
+                .enumerate()
+                .map(|(index, entry)| {
+                    let prefix = if index == state.selected_fs_entry {
+                        ">"
                     } else {
-                        entry.name.clone()
-                    }
+                        " "
+                    };
+                    format!("{} {}", prefix, entry.name)
                 })
                 .collect::<Vec<_>>()
                 .join("\n")
