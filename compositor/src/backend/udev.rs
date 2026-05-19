@@ -206,10 +206,7 @@ pub fn render_outputs(backend: &mut BackendState) {
     }
 }
 
-fn render_device(
-    renderer: &mut GlowRenderer,
-    compositors: &mut [OutputCompositorState],
-) {
+fn render_device(renderer: &mut GlowRenderer, compositors: &mut [OutputCompositorState]) {
     // eDEX dark-blue background — visible even before any client connects.
     const CLEAR_COLOR: [f32; 4] = [0.02, 0.04, 0.08, 1.0];
 
@@ -382,7 +379,10 @@ pub fn on_device_added(
         unsafe { GlowRenderer::new(context) }.context("failed to create glow renderer")?;
 
     // Collect the renderer's supported dmabuf formats — needed by DrmCompositor.
-    let renderer_formats = renderer.dmabuf_formats().into_iter().collect::<HashSet<_>>();
+    let renderer_formats = renderer
+        .dmabuf_formats()
+        .into_iter()
+        .collect::<HashSet<_>>();
 
     // Find and set up one DrmCompositor per connected connector.
     let mut compositors: Vec<OutputCompositorState> = Vec::new();
@@ -401,8 +401,7 @@ pub fn on_device_added(
                 continue;
             };
 
-            let Some(crtc_handle) =
-                find_crtc(&drm, &resources, &connector_info, &used_crtcs)
+            let Some(crtc_handle) = find_crtc(&drm, &resources, &connector_info, &used_crtcs)
             else {
                 warn!(
                     "no available CRTC for connector {:?}-{}",
@@ -448,8 +447,10 @@ pub fn on_device_added(
             output.set_preferred(current_mode);
             output.create_global::<EdexState>(display_handle);
 
-            let allocator =
-                GbmAllocator::new(gbm.clone(), GbmBufferFlags::RENDERING | GbmBufferFlags::SCANOUT);
+            let allocator = GbmAllocator::new(
+                gbm.clone(),
+                GbmBufferFlags::RENDERING | GbmBufferFlags::SCANOUT,
+            );
             let exporter = GbmFramebufferExporter::<DrmDeviceFd>::new(gbm.clone(), Some(node));
 
             match DrmCompositor::new(
@@ -565,7 +566,10 @@ pub fn on_device_removed(backend: &mut BackendState, state: &mut EdexState, devi
             state.space.unmap_output(&cs.output);
         }
         backend.outputs.retain(|o| {
-            !device.compositors.iter().any(|cs| cs.output.name() == o.name())
+            !device
+                .compositors
+                .iter()
+                .any(|cs| cs.output.name() == o.name())
         });
         info!(?device.node, "removed drm device");
     }

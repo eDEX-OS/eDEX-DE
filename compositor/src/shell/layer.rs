@@ -23,12 +23,7 @@ impl WlrLayerShellHandler for EdexState {
         // Assign the surface to the requested output, or the first available output.
         let output = wl_output
             .as_ref()
-            .and_then(|o| {
-                self.space
-                    .outputs()
-                    .find(|out| out.owns(o))
-                    .cloned()
-            })
+            .and_then(|o| self.space.outputs().find(|out| out.owns(o)).cloned())
             .or_else(|| self.space.outputs().next().cloned());
 
         if let Some(output) = output {
