@@ -8,6 +8,7 @@ pub mod keyboard;
 pub mod launcher;
 pub mod panels;
 pub mod resize;
+pub mod settings;
 pub mod state;
 pub mod statusbar;
 pub mod theme;

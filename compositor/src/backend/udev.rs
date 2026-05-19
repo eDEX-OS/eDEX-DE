@@ -186,6 +186,19 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Ede
                                 return FilterResult::Intercept(());
                             }
 
+                            if sym == keysyms::KEY_comma.into() {
+                                if let Ok(mut open) = data.settings_open.lock() {
+                                    *open = !*open;
+                                }
+                                return FilterResult::Intercept(());
+                            }
+
+                            if sym == keysyms::KEY_l.into() || sym == keysyms::KEY_L.into() {
+                                // Super+L: screen lock stub (future: ext-session-lock)
+                                tracing::info!("screen lock requested (stub)");
+                                return FilterResult::Intercept(());
+                            }
+
                             let workspace = if sym == keysyms::KEY_1.into() {
                                 Some(1)
                             } else if sym == keysyms::KEY_2.into() {

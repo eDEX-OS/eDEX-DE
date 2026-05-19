@@ -65,6 +65,7 @@ pub struct EdexState {
     pub tiling: TilingLayout,
     pub focused_window: Option<Window>,
     pub launcher_open: Arc<Mutex<bool>>,
+    pub settings_open: Arc<Mutex<bool>>,
     pub loop_signal: LoopSignal,
     pub loop_handle: LoopHandle<'static, CalloopData>,
     pub pointer_location: Point<f64, Logical>,
@@ -234,6 +235,21 @@ pub fn run_compositor_with_socket_notifier_and_launcher_flag<F>(
 where
     F: FnOnce(OsString) + Send + 'static,
 {
+    run_compositor_with_socket_notifier_and_shared_flags(
+        on_socket_ready,
+        launcher_open,
+        Arc::new(Mutex::new(false)),
+    )
+}
+
+pub fn run_compositor_with_socket_notifier_and_shared_flags<F>(
+    on_socket_ready: F,
+    launcher_open: Arc<Mutex<bool>>,
+    settings_open: Arc<Mutex<bool>>,
+) -> Result<()>
+where
+    F: FnOnce(OsString) + Send + 'static,
+{
     let event_loop = Box::new(
         EventLoop::<CalloopData>::try_new().context("failed to create calloop event loop")?,
     );
@@ -274,6 +290,7 @@ where
         tiling: TilingLayout::new((1920, 1080).into()),
         focused_window: None,
         launcher_open,
+        settings_open,
         loop_signal,
         loop_handle: loop_handle.clone(),
         pointer_location: (0.0, 0.0).into(),

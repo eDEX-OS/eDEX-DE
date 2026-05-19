@@ -9,8 +9,9 @@ use anyhow::{anyhow, Context, Result};
 use chrono::Local;
 use renderer::{
     ui::{
-        builtin_theme, BootAnimation, DiskDisplay, FilesystemPanel, LauncherResult, LauncherState,
-        PanelLayout, ProcDisplay, ResizeState, StatusInfo, SysInfo, UiState,
+        builtin_theme, settings::SettingsPanel, BootAnimation, DiskDisplay, FilesystemPanel,
+        LauncherResult, LauncherState, PanelLayout, ProcDisplay, ResizeState, StatusInfo, SysInfo,
+        UiState,
     },
     wayland_client::{KeyEvent, LayerShellClient},
     EdexRenderer,
@@ -199,6 +200,8 @@ fn build_ui_state(input: UiStateInput<'_>) -> UiState {
         tab_count: input.tab_count,
         active_tab: input.active_tab,
         status: build_status(input.sys_snapshot),
+        settings_open: false,
+        settings: SettingsPanel::new(),
     }
 }
 

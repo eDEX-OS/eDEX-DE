@@ -1,4 +1,4 @@
-use super::{colors::Theme, launcher::LauncherState, resize::ResizeState};
+use super::{colors::Theme, launcher::LauncherState, resize::ResizeState, settings::SettingsPanel};
 
 #[derive(Clone, Debug)]
 pub struct FsEntry {
@@ -83,4 +83,6 @@ pub struct UiState {
     pub tab_count: usize,
     pub active_tab: usize,
     pub status: StatusInfo,
+    pub settings_open: bool,
+    pub settings: SettingsPanel,
 }
