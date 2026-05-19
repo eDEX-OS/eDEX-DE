@@ -298,3 +298,4 @@ jobs:
           commit_message: "Update to ${{ steps.version.outputs.VERSION }}"
           ssh_keyscan_types: rsa,ecdsa,ed25519
           force_push: true
+          assets: packaging/aur/edex-de.install
