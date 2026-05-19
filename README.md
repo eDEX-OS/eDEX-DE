@@ -214,7 +214,48 @@ every push to `master` and every pull request.
 
 ---
 
-## Releases
+## Troubleshooting
+
+### Black screen / blinking cursor after login
+
+This means the compositor failed to acquire seat access (DRM/KMS devices).
+
+**Fix — add yourself to the required groups:**
+
+```bash
+sudo usermod -aG seat,input,video $USER
+```
+
+Then **log out completely** (full logout, not just switching TTYs) and log back in.
+The new group membership only takes effect in a fresh login session.
+
+**Check the session log** to see the exact error:
+
+```bash
+cat ~/.local/share/edex-de/session.log
+```
+
+**Verify systemd-logind is running** (required for seat management):
+
+```bash
+systemctl status systemd-logind
+```
+
+**Verify DRM devices exist:**
+
+```bash
+ls -la /dev/dri/
+```
+
+### Display manager
+
+eDEX-DE works with any display manager that supports Wayland sessions:
+SDDM, GDM, LightDM (with lightdm-gtk-greeter ≥ 2.0), ly, or greetd.
+**KDE's SDDM is fully supported** — it is the recommended DM.
+
+---
+
+
 
 Releases are triggered by pushing a version tag:
 

@@ -55,7 +55,24 @@ pub fn init_udev_backend(
     state: &mut EdexState,
     handle: &LoopHandle<'static, CalloopData>,
 ) -> Result<BackendState> {
-    let (session, notifier) = LibSeatSession::new().context("failed to create libseat session")?;
+    let (session, notifier) = LibSeatSession::new().map_err(|e| {
+        let msg = format!(
+            "Failed to create libseat session: {e}\n\
+            \n\
+            This usually means your user does not have permission to access DRM/KMS devices.\n\
+            Fix: add yourself to the seat, input, and video groups, then log out and back in:\n\
+            \n\
+            \tsudo usermod -aG seat,input,video $USER\n\
+            \n\
+            Also ensure systemd-logind is running:\n\
+            \n\
+            \tsystemctl status systemd-logind\n\
+            \n\
+            Session log: ~/.local/share/edex-de/session.log"
+        );
+        tracing::error!("{}", msg);
+        anyhow!("{}", msg)
+    })?;
     let seat_name = session.seat();
     let udev = UdevBackend::new(&seat_name).context("failed to create udev backend")?;
 

@@ -35,6 +35,7 @@ optdepends=(
     'bluez: Bluetooth support'
     'xdg-desktop-portal: Portal support'
 )
+install=edex-de.install
 source=("$pkgname-$pkgver.tar.gz::https://github.com/eDEX-OS/eDEX-DE/archive/refs/tags/v${pkgver}.tar.gz")
 sha256sums=('SKIP')
 

@@ -3,7 +3,19 @@ set -e
 
 case "$1" in
     configure)
-        echo "eDEX-DE installed. Log out and select 'eDEX-DE' from your display manager."
+        echo ""
+        echo "eDEX-DE installed."
+        echo ""
+        echo "IMPORTANT: Your user must be in the 'seat', 'input', and 'video' groups"
+        echo "to run eDEX-DE as a Wayland compositor."
+        echo ""
+        echo "Run the following, then LOG OUT COMPLETELY and log back in:"
+        echo ""
+        echo "  sudo usermod -aG seat,input,video \$USER"
+        echo ""
+        echo "Then select 'eDEX-DE' from your display manager login screen."
+        echo "Session logs are written to: ~/.local/share/edex-de/session.log"
+        echo ""
         ;;
 esac
 
