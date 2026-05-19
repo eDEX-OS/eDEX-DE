@@ -1,20 +1,35 @@
-use std::{collections::HashMap, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+};
 
 use anyhow::{anyhow, Context, Result};
 use smithay::{
     backend::{
-        allocator::gbm::{GbmAllocator, GbmBufferFlags, GbmDevice},
-        drm::{DrmDevice, DrmDeviceFd, DrmNode},
-        egl::{EGLContext, EGLDevice, EGLDisplay},
+        allocator::{
+            gbm::{GbmAllocator, GbmBufferFlags, GbmDevice},
+            Fourcc,
+        },
+        drm::{
+            compositor::{DrmCompositor, FrameFlags},
+            exporter::gbm::GbmFramebufferExporter,
+            DrmDevice, DrmDeviceFd, DrmNode,
+        },
+        egl::{EGLContext, EGLDisplay},
         input::{Event, InputEvent, KeyboardKeyEvent},
         libinput::{LibinputInputBackend, LibinputSessionInterface},
-        renderer::glow::GlowRenderer,
+        renderer::{
+            element::{surface::WaylandSurfaceRenderElement, AsRenderElements},
+            glow::GlowRenderer,
+            ImportDma,
+        },
         session::{
             libseat::{LibSeatSession, LibSeatSessionNotifier},
             Session,
         },
         udev::{UdevBackend, UdevEvent},
     },
+    desktop::layer_map_for_output,
     input::keyboard::{keysyms, FilterResult},
     output::{Mode as OutputMode, Output, PhysicalProperties, Scale, Subpixel},
     reexports::{
@@ -22,7 +37,7 @@ use smithay::{
             timer::{TimeoutAction, Timer},
             LoopHandle,
         },
-        drm::control::{connector, Device as ControlDevice},
+        drm::control::{connector, crtc, Device as ControlDevice},
         input::Libinput,
     },
     utils::Transform,
@@ -31,15 +46,32 @@ use tracing::{info, warn};
 
 use crate::state::{CalloopData, EdexState};
 
+/// Per-output DRM compositing state.
+pub struct OutputCompositorState {
+    pub output: Output,
+    pub compositor: DrmCompositor<
+        GbmAllocator<DrmDeviceFd>,
+        GbmFramebufferExporter<DrmDeviceFd>,
+        (),
+        DrmDeviceFd,
+    >,
+}
+
+impl std::fmt::Debug for OutputCompositorState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OutputCompositorState")
+            .field("output", &self.output.name())
+            .finish()
+    }
+}
+
 #[derive(Debug)]
 pub struct DrmDeviceState {
     pub node: DrmNode,
     pub drm: DrmDevice,
     pub gbm: GbmDevice<DrmDeviceFd>,
-    pub allocator: GbmAllocator<DrmDeviceFd>,
-    pub egl_display: EGLDisplay,
-    pub egl_device: Option<EGLDevice>,
     pub renderer: GlowRenderer,
+    pub compositors: Vec<OutputCompositorState>,
 }
 
 #[derive(Debug)]
@@ -157,11 +189,69 @@ fn install_libinput_source(
 fn install_render_tick(handle: &LoopHandle<'static, CalloopData>) -> Result<()> {
     handle
         .insert_source(Timer::immediate(), |_, _, data| {
+            render_outputs(&mut data.backend);
             let _ = data.display.flush_clients();
             TimeoutAction::ToDuration(std::time::Duration::from_millis(16))
         })
         .map(|_| ())
         .map_err(|error| anyhow!("failed to insert render timer: {error:?}"))
+}
+
+/// Render all DRM outputs. Called every ~16ms from the event loop timer.
+pub fn render_outputs(backend: &mut BackendState) {
+    for device in backend.devices.values_mut() {
+        let renderer = &mut device.renderer;
+        let compositors = &mut device.compositors;
+        render_device(renderer, compositors);
+    }
+}
+
+fn render_device(
+    renderer: &mut GlowRenderer,
+    compositors: &mut [OutputCompositorState],
+) {
+    // eDEX dark-blue background — visible even before any client connects.
+    const CLEAR_COLOR: [f32; 4] = [0.02, 0.04, 0.08, 1.0];
+
+    for cs in compositors.iter_mut() {
+        // Collect layer-shell surfaces for this output.
+        let elements: Vec<WaylandSurfaceRenderElement<GlowRenderer>> = {
+            let layer_map = layer_map_for_output(&cs.output);
+            let scale: smithay::utils::Scale<f64> = smithay::utils::Scale::from(1.0f64);
+            layer_map
+                .layers()
+                .flat_map(|surface| {
+                    AsRenderElements::<GlowRenderer>::render_elements::<
+                        WaylandSurfaceRenderElement<GlowRenderer>,
+                    >(surface, renderer, (0, 0).into(), scale, 1.0f32)
+                })
+                .collect()
+        };
+
+        match cs
+            .compositor
+            .render_frame::<GlowRenderer, WaylandSurfaceRenderElement<GlowRenderer>>(
+                renderer,
+                &elements,
+                CLEAR_COLOR,
+                FrameFlags::DEFAULT,
+            ) {
+            Ok(result) if !result.is_empty => {
+                if let Err(e) = cs.compositor.commit_frame() {
+                    warn!("DRM commit_frame error on {}: {}", cs.output.name(), e);
+                    cs.compositor.reset_buffers();
+                }
+            }
+            Ok(_) => {
+                // No damage — force redraw next tick so the screen is never stuck.
+                cs.compositor.reset_buffers();
+            }
+            Err(e) => {
+                warn!("render_frame error on {}: {}", cs.output.name(), e);
+                cs.compositor.reset_buffers();
+            }
+        }
+    }
 }
 
 fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut EdexState) {
@@ -211,7 +301,6 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Ede
                             }
 
                             if sym == keysyms::KEY_l.into() || sym == keysyms::KEY_L.into() {
-                                // Super+L: screen lock stub (future: ext-session-lock)
                                 data.lock_screen = true;
                                 tracing::info!("screen lock requested");
                                 return FilterResult::Intercept(());
@@ -269,6 +358,7 @@ pub fn on_device_added(
 
     let node = DrmNode::from_path(path)
         .with_context(|| format!("failed to derive drm node from {}", path.display()))?;
+
     let opened = backend
         .session
         .open(path, smithay::reexports::rustix::fs::OFlags::RDWR)
@@ -279,96 +369,126 @@ pub fn on_device_added(
             )
         })?;
     let fd = DrmDeviceFd::new(opened.into());
-    let (drm, _notifier) =
+
+    let (mut drm, _notifier) =
         DrmDevice::new(fd.clone(), true).context("failed to create drm device")?;
     let gbm = GbmDevice::new(fd.clone()).context("failed to create gbm device")?;
-    let allocator = GbmAllocator::new(gbm.clone(), GbmBufferFlags::RENDERING);
+
+    // Build the OpenGL renderer from an EGL context on this GBM device.
     let egl_display =
         unsafe { EGLDisplay::new(gbm.clone()) }.context("failed to create egl display")?;
-    let egl_device = EGLDevice::device_for_display(&egl_display).ok();
     let context = EGLContext::new(&egl_display).context("failed to create egl context")?;
     let renderer =
         unsafe { GlowRenderer::new(context) }.context("failed to create glow renderer")?;
 
-    let outputs = create_outputs_for_device(display_handle, &fd, node, path);
-    if backend.primary_node.is_none() {
-        backend.primary_node = Some(node);
-    }
-    backend.outputs.extend(outputs);
-    backend.devices.insert(
-        device_id,
-        DrmDeviceState {
-            node,
-            drm,
-            gbm,
-            allocator,
-            egl_display,
-            egl_device,
-            renderer,
-        },
-    );
+    // Collect the renderer's supported dmabuf formats — needed by DrmCompositor.
+    let renderer_formats = renderer.dmabuf_formats().into_iter().collect::<HashSet<_>>();
 
-    info!(path = %path.display(), ?node, "initialized drm/kms device");
-    Ok(())
-}
-
-pub fn on_device_removed(backend: &mut BackendState, state: &mut EdexState, device_id: u64) {
-    if let Some(device) = backend.devices.remove(&device_id) {
-        for output in backend.outputs.drain(..) {
-            state.space.unmap_output(&output);
-        }
-        info!(?device.node, "removed drm device");
-    }
-}
-
-fn create_outputs_for_device(
-    display_handle: &smithay::reexports::wayland_server::DisplayHandle,
-    fd: &DrmDeviceFd,
-    node: DrmNode,
-    path: &Path,
-) -> Vec<Output> {
-    let mut outputs = Vec::new();
+    // Find and set up one DrmCompositor per connected connector.
+    let mut compositors: Vec<OutputCompositorState> = Vec::new();
+    let mut used_crtcs: HashSet<crtc::Handle> = HashSet::new();
+    let mut all_outputs: Vec<Output> = Vec::new();
 
     if let Ok(resources) = fd.resource_handles() {
         for connector_handle in resources.connectors() {
-            let Ok(info) = fd.get_connector(*connector_handle, false) else {
+            let Ok(connector_info) = fd.get_connector(*connector_handle, false) else {
                 continue;
             };
-            if info.state() != connector::State::Connected {
+            if connector_info.state() != connector::State::Connected {
                 continue;
             }
+            let Some(&mode) = connector_info.modes().first() else {
+                continue;
+            };
 
-            let (physical_width, physical_height) = info.size().unwrap_or((0, 0));
+            let Some(crtc_handle) =
+                find_crtc(&drm, &resources, &connector_info, &used_crtcs)
+            else {
+                warn!(
+                    "no available CRTC for connector {:?}-{}",
+                    connector_info.interface(),
+                    connector_info.interface_id()
+                );
+                continue;
+            };
+            used_crtcs.insert(crtc_handle);
+
+            let drm_surface = match drm.create_surface(crtc_handle, mode, &[*connector_handle]) {
+                Ok(s) => s,
+                Err(e) => {
+                    warn!("failed to create DRM surface for connector: {}", e);
+                    continue;
+                }
+            };
+
+            let (phys_w, phys_h) = connector_info.size().unwrap_or((0, 0));
             let output = Output::new(
-                format!("{}-{}", info.interface().as_str(), info.interface_id()),
+                format!(
+                    "{}-{}",
+                    connector_info.interface().as_str(),
+                    connector_info.interface_id()
+                ),
                 PhysicalProperties {
-                    size: (physical_width as i32, physical_height as i32).into(),
+                    size: (phys_w as i32, phys_h as i32).into(),
                     subpixel: Subpixel::Unknown,
                     make: "Unknown".into(),
                     model: path.display().to_string(),
                 },
             );
-
-            if let Some(mode) = info.modes().first() {
-                let current = OutputMode {
-                    size: (mode.size().0 as i32, mode.size().1 as i32).into(),
-                    refresh: (mode.vrefresh() * 1000) as i32,
-                };
-                output.change_current_state(
-                    Some(current),
-                    Some(Transform::Normal),
-                    Some(Scale::Integer(1)),
-                    Some((0, 0).into()),
-                );
-                output.set_preferred(current);
-            }
-
+            let current_mode = OutputMode {
+                size: (mode.size().0 as i32, mode.size().1 as i32).into(),
+                refresh: (mode.vrefresh() * 1000) as i32,
+            };
+            output.change_current_state(
+                Some(current_mode),
+                Some(Transform::Normal),
+                Some(Scale::Integer(1)),
+                Some((0, 0).into()),
+            );
+            output.set_preferred(current_mode);
             output.create_global::<EdexState>(display_handle);
-            outputs.push(output);
+
+            let allocator =
+                GbmAllocator::new(gbm.clone(), GbmBufferFlags::RENDERING | GbmBufferFlags::SCANOUT);
+            let exporter = GbmFramebufferExporter::<DrmDeviceFd>::new(gbm.clone(), Some(node));
+
+            match DrmCompositor::new(
+                &output,
+                drm_surface,
+                None,
+                allocator,
+                exporter,
+                [Fourcc::Argb8888, Fourcc::Xrgb8888],
+                renderer_formats.clone(),
+                drm.cursor_size(),
+                Some(gbm.clone()),
+            ) {
+                Ok(compositor) => {
+                    info!(
+                        output = output.name(),
+                        mode = ?current_mode,
+                        "initialized DRM compositor for output"
+                    );
+                    all_outputs.push(output.clone());
+                    compositors.push(OutputCompositorState { output, compositor });
+                }
+                Err(e) => {
+                    warn!(
+                        "failed to create DRM compositor for {}: {}",
+                        output.name(),
+                        e
+                    );
+                }
+            }
         }
     }
 
-    if outputs.is_empty() {
+    if compositors.is_empty() {
+        // Fallback: create a synthetic output so the session has *something*.
+        warn!(
+            path = %path.display(),
+            "no connectors initialized; creating synthetic fallback output"
+        );
         let output = Output::new(
             format!("{}-fallback", node),
             PhysicalProperties {
@@ -390,8 +510,63 @@ fn create_outputs_for_device(
         );
         output.set_preferred(mode);
         output.create_global::<EdexState>(display_handle);
-        outputs.push(output);
+        all_outputs.push(output);
     }
 
-    outputs
+    if backend.primary_node.is_none() {
+        backend.primary_node = Some(node);
+    }
+    backend.outputs.extend(all_outputs);
+    backend.devices.insert(
+        device_id,
+        DrmDeviceState {
+            node,
+            drm,
+            gbm,
+            renderer,
+            compositors,
+        },
+    );
+
+    info!(path = %path.display(), ?node, "initialized drm/kms device");
+    Ok(())
+}
+
+/// Find an available CRTC for a connected connector.
+fn find_crtc(
+    drm: &DrmDevice,
+    resources: &smithay::reexports::drm::control::ResourceHandles,
+    connector: &smithay::reexports::drm::control::connector::Info,
+    used_crtcs: &HashSet<crtc::Handle>,
+) -> Option<crtc::Handle> {
+    for enc_handle in connector.encoders().iter() {
+        let Ok(enc) = drm.get_encoder(*enc_handle) else {
+            continue;
+        };
+        // Prefer the encoder's currently active CRTC.
+        if let Some(c) = enc.crtc() {
+            if !used_crtcs.contains(&c) {
+                return Some(c);
+            }
+        }
+        // Fall back to any CRTC compatible with this encoder.
+        for c in resources.filter_crtcs(enc.possible_crtcs()) {
+            if !used_crtcs.contains(&c) {
+                return Some(c);
+            }
+        }
+    }
+    None
+}
+
+pub fn on_device_removed(backend: &mut BackendState, state: &mut EdexState, device_id: u64) {
+    if let Some(device) = backend.devices.remove(&device_id) {
+        for cs in &device.compositors {
+            state.space.unmap_output(&cs.output);
+        }
+        backend.outputs.retain(|o| {
+            !device.compositors.iter().any(|cs| cs.output.name() == o.name())
+        });
+        info!(?device.node, "removed drm device");
+    }
 }

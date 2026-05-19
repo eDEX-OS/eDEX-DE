@@ -299,8 +299,14 @@ where
     };
 
     let backend = init_udev_backend(&mut state, &loop_handle)?;
-    for (index, output) in backend.outputs.iter().enumerate() {
-        state.space.map_output(output, ((index as i32) * 1920, 0));
+    let mut x_offset = 0i32;
+    for output in backend.outputs.iter() {
+        state.space.map_output(output, (x_offset, 0));
+        if let Some(mode) = output.current_mode() {
+            x_offset += mode.size.w;
+        } else {
+            x_offset += 1920;
+        }
     }
     if let Some(size) = state.primary_output_size() {
         state.tiling.screen_size = size;
