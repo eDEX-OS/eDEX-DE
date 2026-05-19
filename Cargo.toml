@@ -6,6 +6,7 @@ members = [
     "terminal",
     "launcher",
     "settings",
+    "sysmon",
 ]
 resolver = "2"
 

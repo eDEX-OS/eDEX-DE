@@ -31,7 +31,7 @@ pub use filesystem::FilesystemPanel;
 pub use keyboard::{HexKeyboard, KeyDef};
 pub use panels::{PanelLayout, Rectangle};
 pub use resize::{DragTarget, ResizeState};
-pub use state::{FsEntry, StatusInfo, UiState};
+pub use state::{DiskDisplay, FsEntry, ProcDisplay, StatusInfo, SysInfo, UiState};
 pub use theme::{builtin_theme, parse_color, ThemeConfig, AMBER_TOML, MATRIX_TOML, TRON_TOML};
 
 pub struct EdexRenderer {
@@ -499,15 +499,65 @@ impl EdexRenderer {
                 .collect::<Vec<_>>()
                 .join("\n")
         );
+        let disk_lines = if state.sysinfo.disks.is_empty() {
+            "DISKS      n/a".to_string()
+        } else {
+            state
+                .sysinfo
+                .disks
+                .iter()
+                .take(3)
+                .map(|disk| {
+                    format!(
+                        "DISK {}  {:>5.1}% {} / {}",
+                        disk.mount, disk.used_pct, disk.used_str, disk.total_str
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+        let process_lines = if state.sysinfo.processes.is_empty() {
+            "PROCS      n/a".to_string()
+        } else {
+            state
+                .sysinfo
+                .processes
+                .iter()
+                .take(5)
+                .map(|proc| {
+                    format!(
+                        "PID {:>5}  {:>5.1}%  {:<14} {}",
+                        proc.pid, proc.cpu_pct, proc.mem_str, proc.name
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+        let avg_cpu = if state.sysinfo.cpu_cores.is_empty() {
+            0.0
+        } else {
+            state.sysinfo.cpu_cores.iter().sum::<f32>() / state.sysinfo.cpu_cores.len() as f32
+        };
         let sysinfo_text = format!(
-            "HOST       {}\nGPU        Vulkan / wgpu\nTABS       {}/{}\nBORDER FX  {:.2}\nAUDIO      {}%\nNETWORK    ▲ {:.1} / ▼ {:.1} kb/s",
+            "HOST       {}\nCPU        {}\nCPU AVG    {:.1}% across {} cores\nRAM        {} / {}\nSWAP       {} / {}\nNETWORK    ▲ {:.1} / ▼ {:.1} kb/s\nBATTERY    {}{}\n{}\n{}",
             state.hostname,
-            state.active_tab.saturating_add(1),
-            state.tab_count.max(1),
-            state.border_anim,
-            state.status.volume,
+            state.sysinfo.cpu_model,
+            avg_cpu,
+            state.sysinfo.cpu_cores.len(),
+            format_kib(state.sysinfo.ram_used_kb),
+            format_kib(state.sysinfo.ram_total_kb),
+            format_kib(state.sysinfo.swap_used_kb),
+            format_kib(state.sysinfo.swap_total_kb),
             state.status.net_tx_kbps,
             state.status.net_rx_kbps,
+            state
+                .status
+                .battery_pct
+                .map(|pct| pct.to_string())
+                .unwrap_or_else(|| "n/a".to_string()),
+            if state.status.battery_charging { "% ⚡" } else { "%" },
+            disk_lines,
+            process_lines,
         );
 
         let mut specs = vec![
@@ -790,6 +840,19 @@ fn to_glyphon_color(color: [f32; 4]) -> Color {
 
 fn to_color_channel(value: f32) -> u8 {
     (value.clamp(0.0, 1.0) * 255.0).round() as u8
+}
+
+fn format_kib(kib: u64) -> String {
+    const KIB_PER_MIB: u64 = 1024;
+    const KIB_PER_GIB: u64 = 1024 * 1024;
+
+    if kib >= KIB_PER_GIB {
+        format!("{:.1} GiB", kib as f64 / KIB_PER_GIB as f64)
+    } else if kib >= KIB_PER_MIB {
+        format!("{:.1} MiB", kib as f64 / KIB_PER_MIB as f64)
+    } else {
+        format!("{} KiB", kib)
+    }
 }
 
 fn bounds_for(rect: Rectangle) -> TextBounds {

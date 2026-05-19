@@ -18,6 +18,7 @@ renderer = { path = "../renderer" }
 terminal = { path = "../terminal" }
 launcher = { path = "../launcher" }
 settings = { path = "../settings" }
+sysmon = { path = "../sysmon" }
 tracing = { workspace = true }
 xkbcommon = { workspace = true }
 tracing-subscriber = { workspace = true }

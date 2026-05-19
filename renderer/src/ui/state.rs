@@ -6,6 +6,36 @@ pub struct FsEntry {
     pub is_dir: bool,
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct DiskDisplay {
+    pub mount: String,
+    pub used_pct: f32,
+    pub used_str: String,
+    pub total_str: String,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ProcDisplay {
+    pub pid: u32,
+    pub name: String,
+    pub cpu_pct: f32,
+    pub mem_str: String,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct SysInfo {
+    pub cpu_cores: Vec<f32>,
+    pub cpu_model: String,
+    pub ram_used_kb: u64,
+    pub ram_total_kb: u64,
+    pub swap_used_kb: u64,
+    pub swap_total_kb: u64,
+    pub net_tx_history: Vec<f32>,
+    pub net_rx_history: Vec<f32>,
+    pub disks: Vec<DiskDisplay>,
+    pub processes: Vec<ProcDisplay>,
+}
+
 #[derive(Clone, Debug)]
 pub struct StatusInfo {
     pub volume: u8,
@@ -43,6 +73,7 @@ pub struct UiState {
     pub filesystem_cwd: String,
     pub filesystem_entries: Vec<FsEntry>,
     pub selected_fs_entry: usize,
+    pub sysinfo: SysInfo,
     pub boot_done: bool,
     pub boot_lines: Vec<String>,
     pub boot_overlay_alpha: f32,

@@ -1,0 +1,9 @@
+[package]
+name = "sysmon"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+sysinfo = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }

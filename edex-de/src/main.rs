@@ -1,15 +1,21 @@
-use std::{fs, sync::mpsc, thread};
+use std::{
+    fs,
+    sync::mpsc,
+    thread,
+    time::{Duration, Instant},
+};
 
 use anyhow::{anyhow, Context, Result};
 use chrono::Local;
 use renderer::{
     ui::{
-        builtin_theme, BootAnimation, FilesystemPanel, PanelLayout, ResizeState, StatusInfo,
-        UiState,
+        builtin_theme, BootAnimation, DiskDisplay, FilesystemPanel, PanelLayout, ProcDisplay,
+        ResizeState, StatusInfo, SysInfo, UiState,
     },
     wayland_client::{KeyEvent, LayerShellClient},
     EdexRenderer,
 };
+use sysmon::{SysSnapshot, SysmonCollector};
 use terminal::{key_event_to_bytes, Clipboard, Modifiers, TerminalTabs};
 use tracing::info;
 use xkbcommon::xkb::keysyms::{
@@ -71,6 +77,9 @@ fn main() -> Result<()> {
             .filesystem
             .height,
     );
+    let mut collector = SysmonCollector::new();
+    let mut sys_snapshot = collector.snapshot();
+    let mut last_sys_refresh = Instant::now();
 
     loop {
         layer_client.dispatch_pending()?;
@@ -90,6 +99,12 @@ fn main() -> Result<()> {
             handle_key_event(&mut tabs, &clipboard, &mut filesystem, event, surface_size)?;
         }
 
+        if last_sys_refresh.elapsed() >= Duration::from_secs(1) {
+            collector.refresh();
+            sys_snapshot = collector.snapshot();
+            last_sys_refresh = Instant::now();
+        }
+
         if !boot_done {
             boot_done = boot_anim.update();
         }
@@ -102,6 +117,7 @@ fn main() -> Result<()> {
             tab_count: tabs.len(),
             active_tab: tabs.active_index(),
             filesystem: &filesystem,
+            sys_snapshot: &sys_snapshot,
             boot_done,
             boot_anim: &boot_anim,
             border_anim,
@@ -127,6 +143,7 @@ struct UiStateInput<'a> {
     tab_count: usize,
     active_tab: usize,
     filesystem: &'a FilesystemPanel,
+    sys_snapshot: &'a SysSnapshot,
     boot_done: bool,
     boot_anim: &'a BootAnimation,
     border_anim: f32,
@@ -142,6 +159,7 @@ fn build_ui_state(input: UiStateInput<'_>) -> UiState {
         filesystem_cwd: input.filesystem.breadcrumbs().join(" / "),
         filesystem_entries: input.filesystem.to_ui_entries(),
         selected_fs_entry: input.filesystem.selected_visible_index(),
+        sysinfo: build_sysinfo(input.sys_snapshot),
         boot_done: input.boot_done,
         boot_lines: if input.boot_done {
             Vec::new()
@@ -153,7 +171,60 @@ fn build_ui_state(input: UiStateInput<'_>) -> UiState {
         resize: ResizeState::default(),
         tab_count: input.tab_count,
         active_tab: input.active_tab,
-        status: StatusInfo::default(),
+        status: build_status(input.sys_snapshot),
+    }
+}
+
+fn build_status(snapshot: &SysSnapshot) -> StatusInfo {
+    StatusInfo {
+        volume: 42,
+        battery_pct: snapshot.battery_pct,
+        battery_charging: snapshot.battery_charging,
+        tor_active: false,
+        tailscale_active: false,
+        vpn_active: false,
+        net_tx_kbps: snapshot.net_tx_kbps,
+        net_rx_kbps: snapshot.net_rx_kbps,
+    }
+}
+
+fn build_sysinfo(snapshot: &SysSnapshot) -> SysInfo {
+    SysInfo {
+        cpu_cores: snapshot.cpu_usage.clone(),
+        cpu_model: snapshot.cpu_model.clone(),
+        ram_used_kb: snapshot.ram_used_kb,
+        ram_total_kb: snapshot.ram_total_kb,
+        swap_used_kb: snapshot.swap_used_kb,
+        swap_total_kb: snapshot.swap_total_kb,
+        net_tx_history: snapshot.net_tx_history.clone(),
+        net_rx_history: snapshot.net_rx_history.clone(),
+        disks: snapshot
+            .disks
+            .iter()
+            .map(|disk| {
+                let used_pct = if disk.total_bytes == 0 {
+                    0.0
+                } else {
+                    disk.used_bytes as f32 / disk.total_bytes as f32 * 100.0
+                };
+                DiskDisplay {
+                    mount: disk.mount.clone(),
+                    used_pct,
+                    used_str: format_bytes(disk.used_bytes),
+                    total_str: format_bytes(disk.total_bytes),
+                }
+            })
+            .collect(),
+        processes: snapshot
+            .processes
+            .iter()
+            .map(|proc| ProcDisplay {
+                pid: proc.pid,
+                name: proc.name.clone(),
+                cpu_pct: proc.cpu_pct,
+                mem_str: format_kib(proc.mem_kb),
+            })
+            .collect(),
     }
 }
 
@@ -278,4 +349,33 @@ fn read_hostname() -> String {
         .filter(|hostname| !hostname.is_empty())
         .or_else(|| std::env::var("HOSTNAME").ok())
         .unwrap_or_else(|| "edex-host".to_string())
+}
+
+fn format_kib(kib: u64) -> String {
+    const KIB_PER_MIB: u64 = 1024;
+    const KIB_PER_GIB: u64 = 1024 * 1024;
+
+    if kib >= KIB_PER_GIB {
+        format!("{:.1} GiB", kib as f64 / KIB_PER_GIB as f64)
+    } else if kib >= KIB_PER_MIB {
+        format!("{:.1} MiB", kib as f64 / KIB_PER_MIB as f64)
+    } else {
+        format!("{} KiB", kib)
+    }
+}
+
+fn format_bytes(bytes: u64) -> String {
+    const BYTES_PER_KIB: u64 = 1024;
+    const BYTES_PER_MIB: u64 = 1024 * 1024;
+    const BYTES_PER_GIB: u64 = 1024 * 1024 * 1024;
+
+    if bytes >= BYTES_PER_GIB {
+        format!("{:.1} GiB", bytes as f64 / BYTES_PER_GIB as f64)
+    } else if bytes >= BYTES_PER_MIB {
+        format!("{:.1} MiB", bytes as f64 / BYTES_PER_MIB as f64)
+    } else if bytes >= BYTES_PER_KIB {
+        format!("{:.1} KiB", bytes as f64 / BYTES_PER_KIB as f64)
+    } else {
+        format!("{} B", bytes)
+    }
 }
