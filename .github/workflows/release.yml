@@ -252,3 +252,49 @@ jobs:
             edex-de-*.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  aur-publish:
+    name: Publish to AUR
+    needs: publish
+    runs-on: ubuntu-latest
+    # Only publish stable releases to AUR (skip -beta, -rc, -alpha)
+    if: ${{ !contains(github.ref_name, '-beta') && !contains(github.ref_name, '-rc') && !contains(github.ref_name, '-alpha') }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          VERSION_NO_V="${VERSION#v}"
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "VERSION_NO_V=${VERSION_NO_V}" >> $GITHUB_OUTPUT
+
+      - name: Compute sha256sum of source tarball
+        id: sha256
+        run: |
+          VERSION_NO_V="${{ steps.version.outputs.VERSION_NO_V }}"
+          URL="https://github.com/eDEX-OS/eDEX-DE/archive/refs/tags/v${VERSION_NO_V}.tar.gz"
+          SHA=$(curl -sL "$URL" | sha256sum | awk '{print $1}')
+          echo "SHA256=${SHA}" >> $GITHUB_OUTPUT
+
+      - name: Update PKGBUILD
+        run: |
+          VERSION_NO_V="${{ steps.version.outputs.VERSION_NO_V }}"
+          SHA256="${{ steps.sha256.outputs.SHA256 }}"
+          sed -i "s/^pkgver=.*/pkgver=${VERSION_NO_V}/" packaging/aur/PKGBUILD
+          sed -i "s/^pkgrel=.*/pkgrel=1/" packaging/aur/PKGBUILD
+          sed -i "s/^sha256sums=.*/sha256sums=('${SHA256}')/" packaging/aur/PKGBUILD
+
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v3.0.1
+        with:
+          pkgname: edex-de
+          pkgbuild: packaging/aur/PKGBUILD
+          commit_username: eDEX-OS
+          commit_email: edex-de@github.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to ${{ steps.version.outputs.VERSION }}"
+          ssh_keyscan_types: rsa,ecdsa,ed25519
+          force_push: true

@@ -1,6 +1,6 @@
 # Maintainer: eDEX-OS <edex-de@github.com>
 pkgname=edex-de
-pkgver=1.0.0.beta.2
+pkgver=2.0.2
 pkgrel=1
 pkgdesc="eDEX-DE — A sci-fi Wayland desktop environment built in pure Rust"
 arch=('x86_64')
@@ -35,17 +35,17 @@ optdepends=(
     'bluez: Bluetooth support'
     'xdg-desktop-portal: Portal support'
 )
-source=("$pkgname-$pkgver.tar.gz::https://github.com/eDEX-OS/eDEX-DE/archive/refs/tags/v${pkgver//.beta./-beta.}.tar.gz")
+source=("$pkgname-$pkgver.tar.gz::https://github.com/eDEX-OS/eDEX-DE/archive/refs/tags/v${pkgver}.tar.gz")
 sha256sums=('SKIP')
 
 build() {
-    cd "eDEX-DE-${pkgver//.beta./-beta.}"
+    cd "eDEX-DE-${pkgver}"
     export CARGO_HOME="$srcdir/cargo-home"
     cargo build --release --locked -p edex-de
 }
 
 package() {
-    cd "eDEX-DE-${pkgver//.beta./-beta.}"
+    cd "eDEX-DE-${pkgver}"
 
     install -Dm755 "target/release/edex-de" \
         "$pkgdir/usr/bin/edex-de"
