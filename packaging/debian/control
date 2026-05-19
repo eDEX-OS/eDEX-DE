@@ -1,0 +1,23 @@
+Source: edex-de
+Section: x11
+Priority: optional
+Maintainer: eDEX-OS <edex-de@github.com>
+Build-Depends: debhelper (>= 13), cargo, rustc,
+ libxkbcommon-dev, libinput-dev, libseat-dev, libdrm-dev,
+ libgbm-dev, libwayland-dev, libpixman-1-dev, libvulkan-dev,
+ libudev-dev, libsystemd-dev, pkg-config
+Standards-Version: 4.6.0
+Homepage: https://github.com/eDEX-OS/eDEX-DE
+
+Package: edex-de
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ libxkbcommon0, libinput10, libseat1, libdrm2, libgbm1,
+ libwayland-server0, libvulkan1, libudev1, dbus
+Recommends: xdg-desktop-portal
+Suggests: tailscale, wireguard-tools, tor, fprintd, pipewire,
+ network-manager, bluez
+Description: eDEX-DE — A sci-fi Wayland desktop environment
+ A Wayland compositor and desktop environment inspired by eDEX-UI.
+ Built in pure Rust using smithay and wgpu. Features a sci-fi terminal
+ interface, tiling window management, app launcher, and system dashboard.

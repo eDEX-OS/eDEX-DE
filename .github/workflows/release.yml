@@ -79,24 +79,29 @@ jobs:
           mkdir -p "${PKG}/DEBIAN"
           mkdir -p "${PKG}/usr/bin"
           mkdir -p "${PKG}/usr/share/wayland-sessions"
-          mkdir -p "${PKG}/usr/share/applications"
+          mkdir -p "${PKG}/usr/lib/edex-de"
+          mkdir -p "${PKG}/usr/share/xdg-desktop-portal"
+          mkdir -p "${PKG}/usr/share/edex-de/themes"
           mkdir -p "${PKG}/usr/share/doc/edex-de"
+          mkdir -p "${PKG}/usr/share/licenses/edex-de"
 
           install -Dm755 target/${{ matrix.target }}/release/${{ env.BINARY_NAME }} \
             "${PKG}/usr/bin/edex-de"
 
-          # Session files (will be populated in Phase 11)
-          if [ -f packaging/edex-de.desktop ]; then
-            install -Dm644 packaging/edex-de.desktop \
-              "${PKG}/usr/share/applications/edex-de.desktop"
-          fi
-          if [ -f packaging/edex-de-session.desktop ]; then
-            install -Dm644 packaging/edex-de-session.desktop \
-              "${PKG}/usr/share/wayland-sessions/edex-de.desktop"
-          fi
+          install -Dm644 packaging/session/edex-de.desktop \
+            "${PKG}/usr/share/wayland-sessions/edex-de.desktop"
+
+          install -Dm755 packaging/session/edex-de-startup.sh \
+            "${PKG}/usr/lib/edex-de/edex-de-startup.sh"
+
+          install -Dm644 packaging/session/edex-de-portals.conf \
+            "${PKG}/usr/share/xdg-desktop-portal/edex-de-portals.conf"
+
+          install -Dm644 themes/*.toml \
+            "${PKG}/usr/share/edex-de/themes/"
 
           install -Dm644 README.md "${PKG}/usr/share/doc/edex-de/README.md"
-          install -Dm644 LICENSE "${PKG}/usr/share/doc/edex-de/copyright"
+          install -Dm644 LICENSE "${PKG}/usr/share/licenses/edex-de/LICENSE"
 
           cat > "${PKG}/DEBIAN/control" << CONTROL
           Package: edex-de
@@ -106,7 +111,8 @@ jobs:
           Description: eDEX-DE — A sci-fi Wayland desktop environment
            A Wayland compositor and desktop environment inspired by eDEX-UI.
            Built in pure Rust using smithay and wgpu.
-          Depends: libdrm2, libgbm1, libinput10, libwayland-server0, libxkbcommon0, libvulkan1
+          Depends: libdrm2, libgbm1, libinput10, libwayland-server0, libxkbcommon0, libvulkan1, libudev1, dbus
+          Recommends: xdg-desktop-portal
           Section: x11
           Priority: optional
           CONTROL
@@ -162,6 +168,7 @@ jobs:
             "edex-de-${VERSION_NO_V}/"
           cp README.md LICENSE "edex-de-${VERSION_NO_V}/"
           if [ -d packaging ]; then cp -r packaging "edex-de-${VERSION_NO_V}/"; fi
+          if [ -d themes ]; then cp -r themes "edex-de-${VERSION_NO_V}/"; fi
           tar -czf "edex-de-${VERSION_NO_V}-x86_64-linux.tar.gz" \
             "edex-de-${VERSION_NO_V}/"
 

@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        echo "eDEX-DE installed. Log out and select 'eDEX-DE' from your display manager."
+        ;;
+esac
+
+exit 0
