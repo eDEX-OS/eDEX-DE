@@ -44,6 +44,10 @@ pub struct StatusInfo {
     pub tor_active: bool,
     pub tailscale_active: bool,
     pub vpn_active: bool,
+    pub wireguard_active: bool,
+    pub fprintd_active: bool,
+    pub mic_active: bool,
+    pub camera_active: bool,
     pub net_tx_kbps: f32,
     pub net_rx_kbps: f32,
 }
@@ -57,6 +61,10 @@ impl Default for StatusInfo {
             tor_active: false,
             tailscale_active: false,
             vpn_active: false,
+            wireguard_active: false,
+            fprintd_active: false,
+            mic_active: false,
+            camera_active: false,
             net_tx_kbps: 0.0,
             net_rx_kbps: 0.0,
         }

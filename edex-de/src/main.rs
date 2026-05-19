@@ -16,7 +16,7 @@ use renderer::{
     wayland_client::{KeyEvent, LayerShellClient},
     EdexRenderer,
 };
-use sysmon::{SysSnapshot, SysmonCollector};
+use sysmon::{get_privacy_status, SysSnapshot, SysmonCollector};
 use terminal::{key_event_to_bytes, Clipboard, Modifiers, TerminalTabs};
 use tracing::info;
 use xkbcommon::xkb::keysyms::{
@@ -206,13 +206,18 @@ fn build_ui_state(input: UiStateInput<'_>) -> UiState {
 }
 
 fn build_status(snapshot: &SysSnapshot) -> StatusInfo {
+    let privacy = get_privacy_status();
     StatusInfo {
         volume: 42,
         battery_pct: snapshot.battery_pct,
         battery_charging: snapshot.battery_charging,
-        tor_active: false,
-        tailscale_active: false,
-        vpn_active: false,
+        tor_active: privacy.tor_active,
+        tailscale_active: privacy.tailscale_connected,
+        vpn_active: privacy.wireguard_active || privacy.tailscale_connected,
+        wireguard_active: privacy.wireguard_active,
+        fprintd_active: privacy.fprintd_active,
+        mic_active: privacy.mic_active,
+        camera_active: privacy.camera_active,
         net_tx_kbps: snapshot.net_tx_kbps,
         net_rx_kbps: snapshot.net_rx_kbps,
     }
