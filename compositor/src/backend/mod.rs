@@ -1,1 +1,3 @@
-//! DRM/KMS backend stub — implemented in Phase 1.
+//! DRM/KMS backend support.
+
+pub mod udev;

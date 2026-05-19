@@ -12,6 +12,5 @@ fn main() -> Result<()> {
     info!("eDEX-DE v{}", env!("CARGO_PKG_VERSION"));
     info!("Initializing Wayland compositor...");
 
-    // Phase 0 stub — compositor initialization in Phase 1
-    Ok(())
+    compositor::run_compositor()
 }
