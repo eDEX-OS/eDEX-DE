@@ -1,0 +1,23 @@
+[package]
+name = "edex-de"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "eDEX-DE — A sci-fi Wayland desktop environment"
+default-run = "edex-de"
+
+[[bin]]
+name = "edex-de"
+path = "src/main.rs"
+
+[dependencies]
+compositor = { path = "../compositor" }
+renderer = { path = "../renderer" }
+terminal = { path = "../terminal" }
+launcher = { path = "../launcher" }
+settings = { path = "../settings" }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }

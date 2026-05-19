@@ -1,3 +1,62 @@
 [workspace]
-members = ["src-tauri"]
+members = [
+    "edex-de",
+    "compositor",
+    "renderer",
+    "terminal",
+    "launcher",
+    "settings",
+]
 resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["eDEX-OS"]
+license = "GPL-3.0"
+repository = "https://github.com/eDEX-OS/eDEX-DE"
+
+[workspace.dependencies]
+# Compositor
+smithay = { version = "0.7.0", features = [
+    "backend_drm",
+    "backend_gbm",
+    "backend_egl",
+    "backend_libinput",
+    "backend_udev",
+    "backend_session_libseat",
+    "renderer_gl",
+    "renderer_glow",
+    "renderer_pixman",
+    "renderer_multi",
+    "wayland_frontend",
+    "desktop",
+    "xwayland",
+] }
+# smithay-drm-extras = "0.1.0"  # Added in Phase 1 when EDID support is implemented
+calloop = { version = "0.14", features = ["futures-io"] }
+wayland-server = "0.31"
+
+# GPU / Rendering
+wgpu = { version = "29.0.3", features = ["vulkan", "spirv"] }
+glyphon = "0.11.0"
+cosmic-text = "0.12"
+fontdue = "0.9"
+
+# Terminal
+termwiz = "0.23.3"
+portable-pty = "0.9.0"
+
+# System info
+sysinfo = "0.39.2"
+
+# Utilities
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "2"
+anyhow = "1"
+tokio = { version = "1", features = ["full"] }
+fuzzy-matcher = "0.3"

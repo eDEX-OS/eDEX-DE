@@ -1,42 +1,8 @@
-# Node / npm
-node_modules/
-.npm
-npm-debug.log*
-
-# Build outputs
-dist/
-ui/dist/
-prebuild-src/
-target/
-
-# Rust
-**/*.rs.bk
-Cargo.lock  # DO NOT ignore for apps (remove this if it was excluded before)
-
-# Tauri
-src-tauri/target/
-src-tauri/WixTools/
-src-tauri/gen/
-
-# Logs
-logs/
-*.log
-
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
-.idea/
-.vscode/
+/target/
+Cargo.lock
 *.swp
 *.swo
-
-# Runtime
-pids/
-*.pid
-*.seed
-
-# Legacy Electron artifacts
-src/node_modules/
-dist_bkp/
+.DS_Store
+*.o
+*.a
+dist/

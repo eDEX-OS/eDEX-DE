@@ -1,1 +1,0 @@
-export { WorkspaceBar } from './WorkspaceBar';

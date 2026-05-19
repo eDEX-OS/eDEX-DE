@@ -1,7 +1,0 @@
-[Desktop Entry]
-Name=eDEX-DE
-Comment=Sci-fi Wayland Desktop Environment
-Exec=/usr/bin/edex-de-session
-Type=Application
-DesktopNames=eDEX-DE
-Keywords=edex;wayland;desktop;sci-fi;

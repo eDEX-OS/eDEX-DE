@@ -1,0 +1,16 @@
+[package]
+name = "compositor"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "eDEX-DE Wayland compositor (smithay)"
+
+[dependencies]
+smithay = { workspace = true }
+calloop = { workspace = true }
+wayland-server = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }

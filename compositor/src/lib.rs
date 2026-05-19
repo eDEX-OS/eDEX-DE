@@ -1,0 +1,10 @@
+//! eDEX-DE Wayland compositor.
+//!
+//! Built on smithay — provides DRM/KMS backend, libinput, Wayland protocol handling,
+//! and the tiling window manager logic.
+
+pub mod backend;
+pub mod shell;
+pub mod state;
+
+pub use state::CompositorState;

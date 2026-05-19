@@ -2,73 +2,98 @@ name: CI
 
 on:
   push:
-    branches: ["master", "main"]
+    branches: [master, main]
   pull_request:
-    branches: ["master", "main"]
+    branches: [master, main]
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
 
 jobs:
   check:
-    name: Check (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-22.04, ubuntu-24.04]
-
+    name: cargo check
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install system dependencies (Ubuntu/Debian)
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Install system dependencies
         run: |
-          sudo apt-get update
-          # Required: core build tools
+          sudo apt-get update -y
           sudo apt-get install -y \
-            pkg-config \
-            libssl-dev \
-            patchelf \
-            librsvg2-dev
-          # Required: WebKit (4.1 for newer distros, 4.0 fallback)
-          sudo apt-get install -y libwebkit2gtk-4.1-dev \
-            || sudo apt-get install -y libwebkit2gtk-4.0-dev
-          # Required: GTK3
-          sudo apt-get install -y libgtk-3-dev libglib2.0-dev
-          # Required: audio (rodio/alsa-sys)
-          sudo apt-get install -y libasound2-dev
-          # Optional (may not exist on all Ubuntu versions)
-          sudo apt-get install -y \
-            libayatana-appindicator3-dev \
-            libsoup-3.0-dev \
-            libjavascriptcoregtk-4.1-dev \
-            libxdo-dev \
-            at-spi2-core || true
-      - name: Setup Rust
+            libdrm-dev \
+            libgbm-dev \
+            libegl-dev \
+            libgles2-mesa-dev \
+            libinput-dev \
+            libseat-dev \
+            libxkbcommon-dev \
+            libwayland-dev \
+            libvulkan-dev \
+            vulkan-validationlayers \
+            libsystemd-dev \
+            libx11-dev \
+            libxcb1-dev
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: cargo check
+        run: cargo check --workspace
+
+      - name: cargo clippy
+        run: cargo clippy --workspace -- -D warnings
+
+      - name: cargo fmt check
+        run: cargo fmt --all -- --check
+
+  test:
+    name: cargo test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libdrm-dev \
+            libgbm-dev \
+            libegl-dev \
+            libgles2-mesa-dev \
+            libinput-dev \
+            libseat-dev \
+            libxkbcommon-dev \
+            libwayland-dev \
+            libvulkan-dev \
+            libsystemd-dev \
+            libx11-dev \
+            libxcb1-dev
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
         with:
-          workspaces: "src-tauri -> target"
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-test-
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Install npm dependencies
-        run: npm ci
-
-      - name: TypeScript type check
-        run: npm run typecheck
-
-      - name: Cargo check
-        run: cargo check --manifest-path src-tauri/Cargo.toml
-
-      - name: Build frontend
-        run: npm run build
-
-      - name: Tauri build (no bundle)
-        run: npm run tauri -- build --no-bundle
+      - name: cargo test
+        run: cargo test --workspace
