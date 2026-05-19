@@ -9,7 +9,7 @@ license=('GPL3')
 depends=(
     'libxkbcommon'
     'libinput'
-    'libseat'
+    'libseat.so'
     'mesa'
     'wayland'
     'systemd-libs'
