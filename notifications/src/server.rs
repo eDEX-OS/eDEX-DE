@@ -296,7 +296,14 @@ mod tests {
             .stderr(Stdio::null())
             .spawn()
             .unwrap();
-        std::thread::sleep(Duration::from_millis(300));
+        // Wait for the bus socket rather than a fixed delay: package builds run tests on busy
+        // machines, where the daemon can take seconds to come up.
+        let socket = dir.join("bus");
+        let deadline = std::time::Instant::now() + Duration::from_secs(20);
+        while !socket.exists() && std::time::Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(socket.exists(), "dbus-daemon did not create its socket");
         std::env::set_var("DBUS_SESSION_BUS_ADDRESS", &addr);
 
         let (tx, rx) = mpsc::channel();
@@ -320,7 +327,7 @@ mod tests {
             .status()
             .unwrap();
         assert!(status.success());
-        let ev = rx.recv_timeout(Duration::from_secs(5)).unwrap();
+        let ev = rx.recv_timeout(Duration::from_secs(20)).unwrap();
         match ev {
             ServerEvent::New(n) => {
                 assert_eq!(n.app, "test-app");

@@ -8,6 +8,8 @@
   GeForce (nouveau) desktop where wlroots could not create a renderer for the NVIDIA card.
 * `edex-session` retries Hyprland on the GPUs with a monitor attached (`AQ_DRM_DEVICES`) when it
   exits during start-up on a multi-GPU machine.
+* The notification-server test waits for its private D-Bus socket instead of a fixed 300 ms (it
+  failed package builds on busy machines).
 * The greeter's Mesa shader cache goes to `/var/cache/edex-greeter/cache` (it tried `//.cache`).
 
 ## 3.3.0 — 2026-10-02
