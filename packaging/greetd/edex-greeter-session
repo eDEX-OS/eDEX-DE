@@ -51,6 +51,9 @@ fi
 log "graphical greeter unavailable; falling back to text login"
 printf '\n  eDEX-OS: the graphical login could not start on this GPU (see %s).\n\n' "$LOG"
 if command -v tuigreet >/dev/null 2>&1; then
-    exec tuigreet --time --remember --asterisks --greeting "eDEX-OS" --cmd "$SESSION_CMD"
+    exec tuigreet --time --remember --asterisks --window-padding 2 \
+        --greeting "eDEX-OS // text login (graphical login unavailable)" \
+        --theme "border=cyan;title=cyan;greet=cyan;text=lightcyan;prompt=cyan;input=white;time=cyan;action=cyan;button=lightcyan" \
+        --cmd "$SESSION_CMD"
 fi
 exec agreety --cmd "$SESSION_CMD"
