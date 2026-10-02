@@ -1,3 +1,12 @@
+edex-de (3.3.0-1) unstable; urgency=medium
+
+  * GPU, temperature and eDEX-UI memory grid in the system panel.
+  * ranger as the file manager, in a terminal tab.
+  * Login screen redesign with per-user themes.
+  * No Hyprland XDG_CURRENT_DESKTOP warning.
+
+ -- eDEX-OS <edex-de@github.com>  Fri, 02 Oct 2026 12:00:00 +0000
+
 edex-de (3.2.0-1) unstable; urgency=medium
 
   * Privacy panel reports the real Tor/Tailscale state; WireGuard tunnel management.

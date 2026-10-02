@@ -18,6 +18,8 @@ pub struct GreeterConfig {
     pub show_users: bool,
     pub power_buttons: bool,
     pub font_size: f32,
+    /// Scan line and border pulse (turn off on very slow software rendering).
+    pub animations: bool,
     /// Users below this uid are hidden.
     pub min_uid: u32,
     /// State file remembering the last user/session.
@@ -34,6 +36,7 @@ impl Default for GreeterConfig {
             show_users: true,
             power_buttons: true,
             font_size: 15.0,
+            animations: true,
             min_uid: 1000,
             state_file: PathBuf::from("/var/cache/edex-greeter/state.toml"),
         }

@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.3.0 — 2026-10-02
+
+* **System panel:** a block for every GPU (AMD, Intel and nouveau through sysfs, NVIDIA through
+  `nvidia-smi`): load, VRAM, temperature, clock and power where the driver reports them; a
+  temperatures list from all sensors; memory drawn as the eDEX-UI point grid (used memory lit,
+  cache dim) with a swap bar. The storage bars, which were always near empty, show real usage.
+* **Files with ranger, as a terminal tab:** SUPER+E, the RANGER button on the file panel and
+  opening a folder from any app (the Files desktop entry handles `inode/directory`) start ranger
+  in a new eDEX terminal tab in that directory; the tab closes when ranger quits. Outside an eDEX
+  session the entry opens ranger in kitty.
+* **Login screen:** the shell's look (status bar, large clock, scanlines, pulsing frames, scan
+  line), a live SYSTEM panel and an ACCESS LOG of the greeter's own events, and each user's own
+  theme: eDEX-DE publishes the theme name to `/var/lib/edex-greeter/themes`, which the greeter
+  reads (ownership-checked) as users are selected.
+* Hyprland no longer warns at login that `XDG_CURRENT_DESKTOP` is managed externally.
+
 ## 3.2.0 — 2026-10-01
 
 * **Privacy panel shows the real state.** Tor and Tailscale were reported as not installed until

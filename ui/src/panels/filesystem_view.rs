@@ -21,6 +21,18 @@ pub fn draw(ctx: &mut Ctx, rect: Rect, state: &ShellState) {
     );
     ctx.hits.push(rect, HitTarget::FilesystemArea);
     let line = ctx.line();
+    // "RANGER" in the frame header opens ranger in a terminal tab here.
+    let head_h = (inner.y - rect.y - 2.0).max(line * 0.8);
+    let ranger = Rect::new(rect.right() - 74.0, rect.y + 1.0, 70.0, head_h);
+    ctx.scene.fill(ranger, with_alpha(t.border, 0.14));
+    ctx.scene.text_aligned(
+        Rect::new(ranger.x, ranger.y + (ranger.h - line) / 2.0, ranger.w, line),
+        ctx.small(),
+        t.border,
+        crate::scene::Align::Center,
+        "RANGER ▸",
+    );
+    ctx.hits.push(ranger, HitTarget::FsRanger);
     let fs = &state.filesystem;
 
     // Breadcrumbs

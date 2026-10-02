@@ -4,6 +4,8 @@ mod config;
 mod greetd;
 mod screen;
 mod sessions;
+mod stats;
+mod user_theme;
 mod users;
 
 use std::{
@@ -57,6 +59,13 @@ pub enum Event {
 pub struct Greeter {
     pub cfg: GreeterConfig,
     pub theme: ::ui::Theme,
+    themes: std::collections::BTreeMap<String, ::ui::Theme>,
+    /// User whose published theme is applied (re-checked when the selection changes).
+    themed_for: Option<String>,
+    pub stats: stats::Stats,
+    /// Timestamped events shown in the ACCESS LOG panel.
+    pub log: std::collections::VecDeque<(String, String, bool)>,
+    stats_at: Instant,
     pub metrics: ::ui::Metrics,
     pub users: Vec<User>,
     pub sessions: Vec<Session>,
@@ -85,6 +94,14 @@ impl Greeter {
         (self.started.elapsed().as_secs_f32() * 0.8).sin() * 0.5 + 0.5
     }
 
+    pub fn started_secs(&self) -> f32 {
+        self.started.elapsed().as_secs_f32()
+    }
+
+    pub fn date_short(&self) -> String {
+        chrono::Local::now().format("%a %d %b %Y").to_string()
+    }
+
     fn current_user(&self) -> String {
         if self.cfg.show_users && !self.users.is_empty() {
             self.users
@@ -103,7 +120,66 @@ impl Greeter {
     }
 
     fn set_message(&mut self, msg: impl Into<String>, error: bool) {
-        self.message = Some((msg.into(), error));
+        let msg = msg.into();
+        self.log_event(msg.clone(), error);
+        self.message = Some((msg, error));
+    }
+
+    pub fn log_event(&mut self, text: impl Into<String>, error: bool) {
+        let text = text.into();
+        if self.log.back().is_some_and(|(_, t, _)| *t == text) {
+            return;
+        }
+        if self.log.len() >= 40 {
+            self.log.pop_front();
+        }
+        let ts = chrono::Local::now().format("%H:%M:%S").to_string();
+        self.log.push_back((ts, text, error));
+    }
+
+    /// Use the theme the selected user picked in eDEX-DE, else the configured one.
+    fn sync_user_theme(&mut self) {
+        let (name, uid) = if self.cfg.show_users && !self.users.is_empty() {
+            match self.users.get(self.user_idx) {
+                Some(u) => (u.name.clone(), Some(u.uid)),
+                None => return,
+            }
+        } else {
+            let n = self.username_input.trim().to_string();
+            let uid = self.users.iter().find(|u| u.name == n).map(|u| u.uid);
+            (n, uid)
+        };
+        if self.themed_for.as_deref() == Some(name.as_str()) {
+            return;
+        }
+        let published =
+            uid.and_then(|uid| user_theme::read(std::path::Path::new(user_theme::DIR), &name, uid));
+        let theme = published
+            .as_ref()
+            .and_then(|t| self.themes.get(t))
+            .or_else(|| self.themes.get(&self.cfg.theme))
+            .cloned()
+            .unwrap_or_else(::ui::theme::builtin_tron);
+        if theme.name != self.theme.name {
+            self.log_event(format!("theme {} for {name}", theme.name), false);
+        }
+        self.theme = theme;
+        self.themed_for = Some(name);
+    }
+
+    /// Clock, stats and theme; returns true when something visible changed.
+    fn tick(&mut self) -> bool {
+        let clock = self.clock.clone();
+        self.tick_clock();
+        let mut changed = clock != self.clock;
+        if self.stats_at.elapsed() >= Duration::from_secs(1) {
+            self.stats.refresh();
+            self.stats_at = Instant::now();
+            changed = true;
+        }
+        let themed = self.themed_for.clone();
+        self.sync_user_theme();
+        changed || themed != self.themed_for
     }
 
     /// Run a greetd call on a worker thread; the result comes back as `Event::Greetd`.
@@ -175,10 +251,12 @@ impl Greeter {
                     return;
                 }
                 self.message = None;
+                self.log_event(format!("session request for {user}"), false);
                 self.call(move |g| g.create_session(&user));
             }
             Phase::Prompt => {
                 let answer = std::mem::take(&mut self.input);
+                self.log_event("verifying credentials", false);
                 self.call(move |g| g.respond(Some(answer)));
             }
             _ => {}
@@ -198,6 +276,8 @@ impl Greeter {
     fn handle_step(&mut self, step: Result<Step>) {
         match step {
             Ok(Step::Prompt { message, secret }) => {
+                let what = message.trim().trim_end_matches(':').to_lowercase();
+                self.log_event(format!("challenge: {what}"), false);
                 self.phase = Phase::Prompt;
                 self.prompt = message;
                 self.secret = secret;
@@ -389,6 +469,7 @@ fn run(cli: Cli) -> Result<i32> {
         .get(&cfg.theme)
         .cloned()
         .unwrap_or_else(::ui::theme::builtin_tron);
+    let themes_all = themes;
     let mut gpu = GpuContext::new(Some("JetBrainsMono Nerd Font".into()));
     let metrics = gpu.metrics(cfg.font_size, cfg.font_size);
 
@@ -441,6 +522,11 @@ fn run(cli: Cli) -> Result<i32> {
     let mut g = Greeter {
         cfg,
         theme,
+        themes: themes_all,
+        themed_for: None,
+        stats: stats::Stats::new(),
+        log: std::collections::VecDeque::new(),
+        stats_at: Instant::now(),
         metrics,
         users,
         sessions,
@@ -469,6 +555,20 @@ fn run(cli: Cli) -> Result<i32> {
         quit: false,
         exit_code: 0,
     };
+    g.log_event(
+        if g.demo {
+            "demo mode: greetd not connected".to_string()
+        } else {
+            "greetd link established".to_string()
+        },
+        false,
+    );
+    g.log_event(
+        format!("{} users, {} sessions", g.users.len(), g.sessions.len()),
+        false,
+    );
+    g.log_event("awaiting credentials", false);
+    g.sync_user_theme();
     g.tick_clock();
 
     let window: SurfaceId = platform
@@ -477,6 +577,7 @@ fn run(cli: Cli) -> Result<i32> {
     let mut renderer: Option<SurfaceRenderer> = None;
     let mut hits = ::ui::HitMap::default();
     let mut dirty = true;
+    let mut last_anim: u64 = 0;
     let mut frames: u64 = 0;
     let mut pointer = (0.0f64, 0.0f64);
     let smoke = cli.smoke_test.map(Duration::from_secs);
@@ -546,8 +647,12 @@ fn run(cli: Cli) -> Result<i32> {
                     dirty = true;
                 }
                 PlatformEvent::App(Event::Tick) => {
-                    g.tick_clock();
-                    dirty = true;
+                    // The scan line animates at ~12 fps; otherwise redraw only on changes.
+                    let frame = (g.started.elapsed().as_millis() / 80) as u64;
+                    if g.tick() || (g.cfg.animations && frame != last_anim) {
+                        dirty = true;
+                    }
+                    last_anim = frame;
                     if let Some(s) = smoke {
                         if g.started.elapsed() >= s {
                             g.quit = true;

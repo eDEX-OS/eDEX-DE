@@ -68,6 +68,11 @@ pub enum Request {
         #[serde(default)]
         body: String,
     },
+    /// Open ranger in a new terminal tab, in `path` or the file panel's directory.
+    Files {
+        #[serde(default)]
+        path: Option<String>,
+    },
     /// Run the eDEX-OS installer or another shell-integrated action.
     Action {
         name: String,
@@ -184,6 +189,12 @@ pub fn parse_args(args: &[String]) -> Result<Request, String> {
             let body = it.collect::<Vec<_>>().join(" ");
             Request::Notify { summary, body }
         }
+        "files" => Request::Files {
+            path: {
+                let p = it.collect::<Vec<_>>().join(" ");
+                (!p.is_empty()).then_some(p)
+            },
+        },
         "action" => Request::Action {
             name: arg(&mut it, "name")?,
         },

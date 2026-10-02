@@ -111,9 +111,10 @@ Hyprland binds (from `share/hypr/edex/binds.lua`, editable in `~/.config/hypr/us
 | `SUPER+N` | Notification history |
 | `SUPER+Escape` | Power menu |
 | `SUPER+Return` / `SUPER+F1` | Focus the eDEX terminal / file panel |
-| `SUPER+Shift+Return`, `SUPER+E` | kitty, file manager |
+| `SUPER+Shift+Return` | kitty |
 | `SUPER+Q`, `SUPER+V` | Close, float the focused window |
 | `SUPER+M` | Minimize the focused window into a tab in the centre panel |
+| `SUPER+E` | Files: ranger in a new terminal tab, in the file panel's directory |
 | `SUPER+F` | Maximize: full width, side panels hidden, top bar and window controls stay |
 | `SUPER+SHIFT+F` | True fullscreen over everything |
 | `SUPER+CTRL+F` | Hide / show the side panels for all apps |

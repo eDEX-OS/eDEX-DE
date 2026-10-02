@@ -165,6 +165,8 @@ struct Tab {
     >,
     title: Option<String>,
     exited: Option<i32>,
+    /// Program tab (e.g. ranger): removed as soon as the program exits.
+    close_on_exit: bool,
     bell_at: Option<Instant>,
     /// Pending OSC 52 / bracketed clipboard read formatter.
     pending_clipboard: Option<ClipboardFormatter>,
@@ -270,6 +272,26 @@ impl TerminalTabs {
 
     /// Spawn a new shell tab and make it active.
     pub fn new_tab(&mut self) -> Result<usize> {
+        self.spawn_tab(None, None)
+    }
+
+    /// Run `program args…` in a new tab in `cwd`; the tab closes when the program exits.
+    pub fn new_command_tab(
+        &mut self,
+        program: &str,
+        args: Vec<String>,
+        cwd: Option<PathBuf>,
+    ) -> Result<usize> {
+        self.spawn_tab(Some((program.to_string(), args)), cwd)
+    }
+
+    fn spawn_tab(
+        &mut self,
+        command: Option<(String, Vec<String>)>,
+        cwd: Option<PathBuf>,
+    ) -> Result<usize> {
+        let close_on_exit = command.is_some();
+        let initial_title = command.as_ref().map(|(program, _)| program.clone());
         let id = self.next_id;
         self.next_id += 1;
         let listener = Listener {
@@ -294,15 +316,16 @@ impl TerminalTabs {
             "TERM_PROGRAM_VERSION".to_string(),
             env!("CARGO_PKG_VERSION").to_string(),
         );
-        let shell = self
-            .config
-            .shell
-            .clone()
-            .map(|program| tty::Shell::new(program, self.config.shell_args.clone()));
-        let working_directory = self
-            .config
-            .working_directory
-            .clone()
+        let shell = match command {
+            Some((program, args)) => Some(tty::Shell::new(program, args)),
+            None => self
+                .config
+                .shell
+                .clone()
+                .map(|program| tty::Shell::new(program, self.config.shell_args.clone())),
+        };
+        let working_directory = cwd
+            .or_else(|| self.config.working_directory.clone())
             .or_else(|| self.tabs.get(self.active).and_then(child_cwd))
             .or_else(|| std::env::var("HOME").ok().map(PathBuf::from));
         let options = tty::Options {
@@ -324,12 +347,13 @@ impl TerminalTabs {
             notifier,
             sender,
             join: Some(join),
-            title: None,
+            title: initial_title,
             exited: None,
             bell_at: None,
             pending_clipboard: None,
             dragging: false,
             child_pid,
+            close_on_exit,
         });
         self.active = self.tabs.len() - 1;
         self.reindex();
@@ -765,8 +789,12 @@ impl TerminalTabs {
             }
             TermEvent::Exit(id, code) => {
                 if let Some(&i) = self.ids.get(&id) {
-                    self.tabs[i].exited = Some(code);
                     info!(tab = id, code, "shell exited");
+                    if self.tabs[i].close_on_exit {
+                        let _ = self.close_tab(i);
+                    } else {
+                        self.tabs[i].exited = Some(code);
+                    }
                 }
                 true
             }

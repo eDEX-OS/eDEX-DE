@@ -42,6 +42,8 @@ pub enum HitTarget {
     FsEntry(usize),
     FsBreadcrumb(usize),
     FsParent,
+    /// Open ranger in the file panel's directory.
+    FsRanger,
     KeyboardKey(usize, usize),
     ResizeHandle(ResizeHandle),
     Workspace(u32),

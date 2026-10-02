@@ -3,7 +3,7 @@
 %{!?_tmpfilesdir:%global _tmpfilesdir %{_prefix}/lib/tmpfiles.d}
 
 Name:           edex-de
-Version:        3.2.0
+Version:        3.3.0
 Release:        1%{?dist}
 Summary:        eDEX-DE - sci-fi desktop shell for Hyprland
 License:        GPL-3.0-only
@@ -14,7 +14,7 @@ BuildRequires:  rust >= 1.95 cargo pkgconfig librsvg2-tools
 BuildRequires:  libxkbcommon-devel wayland-devel vulkan-headers dbus-devel
 Requires:       hyprland >= 0.55 cage greetd libxkbcommon wayland-libs vulkan-loader dbus polkit
 Requires:       xdg-desktop-portal-gtk pipewire wireplumber NetworkManager bluez upower brightnessctl
-Requires:       jetbrains-mono-fonts kitty wl-clipboard grim slurp playerctl libnotify
+Requires:       jetbrains-mono-fonts kitty ranger wl-clipboard grim slurp playerctl libnotify
 Recommends:     hyprlock hypridle cliphist
 
 %description
@@ -64,6 +64,7 @@ install -Dm644 assets/logo.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/ap
 %{_datadir}/wayland-sessions/edex-de.desktop
 %{_datadir}/applications/edex-settings.desktop
 %{_datadir}/applications/edex-privacy.desktop
+%{_datadir}/applications/edex-files.desktop
 %{_datadir}/xdg-desktop-portal/edex-de-portals.conf
 %{_userunitdir}/edex-de.service
 %{_tmpfilesdir}/edex-greeter.conf
@@ -74,6 +75,9 @@ install -Dm644 assets/logo.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/ap
 %{_datadir}/icons/hicolor/*/apps/edex-de.*
 
 %changelog
+* Fri Oct 02 2026 eDEX-OS <edex-de@github.com> - 3.3.0-1
+- GPU and temperature monitors, eDEX-UI memory grid, ranger file manager, login screen redesign
+
 * Thu Oct 01 2026 eDEX-OS <edex-de@github.com> - 3.2.0-1
 - Real privacy state, WireGuard tunnels, settings desktop entries, Qt/GTK/KDE theming, side-panel toggle
 

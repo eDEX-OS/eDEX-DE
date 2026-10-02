@@ -18,7 +18,8 @@ hl.bind(mod .. " + F1", ipc("focus filesystem"))
 
 -- Applications
 hl.bind(mod .. " + SHIFT + Return", hl.dsp.exec_cmd("kitty"))
-hl.bind(mod .. " + E", hl.dsp.exec_cmd("nemo"))
+-- Files: ranger in a new eDEX terminal tab, in the file panel's directory.
+hl.bind(mod .. " + E", ipc("files"))
 hl.bind(mod .. " + B", hl.dsp.exec_cmd("xdg-open https://"))
 
 -- Window management

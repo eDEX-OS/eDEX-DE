@@ -13,7 +13,7 @@ Architecture: amd64
 Depends: ${shlibs:Depends}, ${misc:Depends},
  hyprland (>= 0.55), cage, greetd, libxkbcommon0, libwayland-client0, libvulkan1, dbus,
  polkitd, xdg-desktop-portal-gtk, pipewire, wireplumber, network-manager, bluez, upower,
- brightnessctl, fonts-jetbrains-mono, kitty, wl-clipboard, grim, slurp, playerctl, libnotify-bin
+ brightnessctl, fonts-jetbrains-mono, kitty, ranger, wl-clipboard, grim, slurp, playerctl, libnotify-bin
 Recommends: hyprlock, hypridle, xdg-desktop-portal-hyprland, cliphist
 Suggests: tailscale, tor, fprintd, power-profiles-daemon, accountsservice, pavucontrol
 Description: eDEX-DE - sci-fi desktop shell for Hyprland

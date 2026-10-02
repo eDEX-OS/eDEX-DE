@@ -31,6 +31,9 @@ hl.config({
         middle_click_paste = true,
         key_press_enables_dpms = true,
         mouse_move_enables_dpms = true,
+        -- edex-session sets XDG_CURRENT_DESKTOP=eDEX-DE:Hyprland on purpose (portals and apps key
+        -- off it); without this Hyprland shows a "managed externally" warning at every login.
+        disable_xdg_env_checks = true,
     },
     xwayland = { enabled = true, force_zero_scaling = true },
     cursor = { inactive_timeout = 5, hide_on_key_press = false },

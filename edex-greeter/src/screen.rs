@@ -4,7 +4,7 @@ use ui::{
     geometry::{with_alpha, Rect},
     hit::{HitMap, HitTarget},
     layout::Metrics,
-    scene::{Align, RectKind, Scene},
+    scene::{Align, RectKind, Scanlines, Scene},
     theme::Theme,
     widgets::Ctx,
 };
@@ -64,35 +64,124 @@ pub fn render(g: &Greeter, width: f32, height: f32) -> Rendered {
     let line = ctx.line();
     let font = ctx.font();
 
-    // Header: hostname + clock.
+    let small = ctx.small();
+    let anim = g.cfg.animations;
+    let t_secs = g.started_secs();
+
+    // Top bar, as in the shell: badge, host, title, date and clock.
+    let bar_h = (line * 2.0).round();
+    let bar = Rect::new(0.0, 0.0, width, bar_h);
+    ctx.scene.fill(bar, theme.panel_bg);
+    ctx.scene.hline(
+        0.0,
+        bar.bottom() - 1.0,
+        width,
+        with_alpha(theme.border, 0.6),
+    );
+    let ty = (bar_h - line) / 2.0;
+    let badge = Rect::new(12.0, 4.0, 104.0, bar_h - 8.0);
+    ctx.scene.fill(badge, with_alpha(theme.border, 0.15));
+    ctx.scene.stroke(badge, theme.border, 1.0);
     ctx.scene.text_bold(
-        Rect::new(24.0, 16.0, width * 0.5, line * 1.4),
-        font * 1.3,
+        Rect::new(badge.x, ty, badge.w, line),
+        font,
         theme.border,
-        Align::Left,
-        format!("eDEX-OS  //  {}", g.hostname),
+        Align::Center,
+        "eDEX-OS",
     );
     ctx.scene.text_aligned(
-        Rect::new(width * 0.5, 16.0, width * 0.5 - 24.0, line * 1.4),
-        font * 1.3,
+        Rect::new(badge.right() + 14.0, ty, width * 0.3, line),
+        font,
+        theme.text_secondary,
+        Align::Left,
+        g.hostname.clone(),
+    );
+    ctx.scene.text_aligned(
+        Rect::new(width * 0.3, ty, width * 0.4, line),
+        font,
+        theme.text_secondary,
+        Align::Center,
+        "// SECURE LOGIN TERMINAL",
+    );
+    ctx.scene.text_bold(
+        Rect::new(width * 0.6, ty, width * 0.4 - 16.0, line),
+        font,
         theme.text_primary,
         Align::Right,
+        format!("{}   {}", g.date_short(), g.clock),
+    );
+
+    // Big clock above the login panel.
+    let clock_size = (font * 3.4).round();
+    let clock_y = bar_h + (height * 0.06).max(line);
+    ctx.scene.text_bold(
+        Rect::new(0.0, clock_y, width, clock_size * 1.3),
+        clock_size,
+        theme.border,
+        Align::Center,
         g.clock.clone(),
     );
     ctx.scene.text_aligned(
-        Rect::new(width * 0.5, 16.0 + line * 1.4, width * 0.5 - 24.0, line),
+        Rect::new(0.0, clock_y + clock_size * 1.3, width, line),
         font,
         theme.text_secondary,
-        Align::Right,
-        g.date.clone(),
+        Align::Center,
+        g.date.to_uppercase(),
     );
 
     // Login panel.
     let pw = (width * 0.42).clamp(420.0, 640.0);
     let ph = line * 17.5;
-    let panel = Rect::new(0.0, 0.0, width, height).centered(pw, ph).round();
-    let inner = ctx.frame(panel, Some("LOGIN"));
+    let top = clock_y + clock_size * 1.3 + line * 2.0;
+    let py = top
+        .max((height - ph) / 2.0)
+        .min((height - ph - line * 3.0).max(top));
+    let panel = Rect::new(((width - pw) / 2.0).round(), py.round(), pw, ph);
+    let inner = ctx.frame(panel, Some("AUTHENTICATION"));
+    // Scan line sweeping down the panel.
+    if anim {
+        let phase = (t_secs / 3.2).fract();
+        let sy = panel.y + phase * panel.h;
+        ctx.scene.fill(
+            Rect::new(panel.x + 2.0, sy, panel.w - 4.0, 2.0),
+            with_alpha(theme.border, 0.22),
+        );
+        ctx.scene.fill(
+            Rect::new(panel.x + 2.0, sy - 10.0, panel.w - 4.0, 10.0),
+            with_alpha(theme.border, 0.04),
+        );
+    }
+    // Side panels on wide screens.
+    let side_w = ((width - pw) / 2.0 - 48.0).min(380.0);
+    if side_w >= 240.0 {
+        let left = Rect::new(24.0, panel.y, side_w, ph);
+        draw_system(&mut ctx, left, g);
+        let right = Rect::new(width - 24.0 - side_w, panel.y, side_w, ph);
+        draw_log(&mut ctx, right, g);
+    }
     let mut y = inner.y + line * 0.5;
+    // The selected user's monogram in a hexagon, top right of the panel.
+    let who = if g.cfg.show_users && !g.users.is_empty() {
+        g.users
+            .get(g.user_idx)
+            .map(|u| u.real_name.clone())
+            .unwrap_or_default()
+    } else {
+        g.username_input.clone()
+    };
+    if let Some(initial) = who.trim().chars().next() {
+        let hs = line * 2.4;
+        let hex = Rect::new(inner.right() - hs, panel.y - hs * 0.5, hs, hs);
+        ctx.scene
+            .shape(RectKind::Hexagon, hex, theme.panel_bg, theme.border, 2.0);
+        ctx.scene.text_bold(
+            Rect::new(hex.x, hex.y + (hs - line * 1.3) / 2.0, hs, line * 1.3),
+            font * 1.3,
+            theme.border,
+            Align::Center,
+            initial.to_uppercase().to_string(),
+        );
+    }
 
     // User list or user entry.
     if g.cfg.show_users && !g.users.is_empty() {
@@ -126,7 +215,11 @@ pub fn render(g: &Greeter, width: f32, height: f32) -> Rendered {
                     line * 1.2,
                 ),
                 font * 0.9,
-                theme.text_dim,
+                if selected {
+                    theme.text_secondary
+                } else {
+                    theme.text_dim
+                },
                 Align::Right,
                 u.name.clone(),
             );
@@ -277,14 +370,166 @@ pub fn render(g: &Greeter, width: f32, height: f32) -> Rendered {
             x += w + 8.0;
         }
     }
-    ctx.label_small(
-        Rect::new(24.0, height - 24.0 - line * 1.6, width * 0.5, line * 1.6),
-        &format!(
+    ctx.scene.text_aligned(
+        Rect::new(24.0, height - 24.0 - line * 1.3, width * 0.5, line),
+        small,
+        theme.text_dim,
+        Align::Left,
+        format!(
             "edex-greeter {}  ·  ↑↓ user  ·  Tab session  ·  Enter log in",
             env!("CARGO_PKG_VERSION")
         ),
-        theme.text_dim,
     );
 
+    scene.scanlines = Some(Scanlines {
+        color: theme.border,
+        intensity: 0.18,
+    });
     Rendered { scene, hits }
+}
+
+fn fmt_gib(kb: u64) -> String {
+    format!("{:.1} GiB", kb as f64 / (1024.0 * 1024.0))
+}
+
+fn fmt_uptime(secs: u64) -> String {
+    let (d, h, m) = (secs / 86_400, (secs % 86_400) / 3600, (secs % 3600) / 60);
+    if d > 0 {
+        format!("{d}d {h:02}h {m:02}m")
+    } else {
+        format!("{h:02}h {m:02}m")
+    }
+}
+
+/// Live SYSTEM readout (left of the login panel).
+fn draw_system(ctx: &mut Ctx, rect: Rect, g: &Greeter) {
+    let t = ctx.theme;
+    let inner = ctx.frame(rect, Some("SYSTEM"));
+    let line = ctx.line();
+    let small = ctx.small();
+    let s = &g.stats;
+    let cw = ctx.metrics.cell_w * 0.9;
+    let mut y = inner.y + 4.0;
+    let rows: [(&str, String); 5] = [
+        ("HOST", g.hostname.clone()),
+        ("KERNEL", s.kernel.clone()),
+        ("CPU", format!("{} × {}", s.cores, s.cpu_model)),
+        ("MEMORY", fmt_gib(s.mem_total_kb)),
+        ("UPTIME", fmt_uptime(s.uptime_secs)),
+    ];
+    let key_w = 70.0;
+    for (k, v) in rows {
+        if y + line > inner.bottom() {
+            return;
+        }
+        ctx.scene.text_aligned(
+            Rect::new(inner.x, y, key_w, line),
+            small,
+            t.text_dim,
+            Align::Left,
+            k,
+        );
+        let v: String = v
+            .chars()
+            .take(((inner.w - key_w) / cw).max(4.0) as usize)
+            .collect();
+        ctx.scene.text_aligned(
+            Rect::new(inner.x + key_w, y, inner.w - key_w, line),
+            small,
+            t.text_primary,
+            Align::Left,
+            v,
+        );
+        y += line;
+    }
+    y += line * 0.6;
+    // CPU load history.
+    let graph_h = (line * 2.6).round();
+    if y + line + graph_h > inner.bottom() {
+        return;
+    }
+    ctx.scene.text_aligned(
+        Rect::new(inner.x, y, inner.w, line),
+        small,
+        t.text_secondary,
+        Align::Left,
+        format!("CPU LOAD  {:.0}%", s.cpu_now() * 100.0),
+    );
+    y += line;
+    let samples: Vec<f32> = {
+        let mut v = vec![0.0; 48usize.saturating_sub(s.cpu_history.len())];
+        v.extend(s.cpu_history.iter().copied());
+        v
+    };
+    ctx.scene.sparkline(
+        Rect::new(inner.x, y, inner.w, graph_h),
+        &samples,
+        with_alpha(t.border, 0.85),
+        with_alpha(t.border, 0.08),
+    );
+    y += graph_h + line * 0.6;
+    if y + line + 8.0 > inner.bottom() {
+        return;
+    }
+    let mem = s.mem_used_kb as f32 / s.mem_total_kb.max(1) as f32;
+    ctx.scene.text_aligned(
+        Rect::new(inner.x, y, inner.w, line),
+        small,
+        t.text_secondary,
+        Align::Left,
+        format!(
+            "RAM  {} / {}",
+            fmt_gib(s.mem_used_kb),
+            fmt_gib(s.mem_total_kb)
+        ),
+    );
+    y += line;
+    ctx.meter(Rect::new(inner.x, y, inner.w, 8.0), mem, t.border);
+}
+
+/// ACCESS LOG: the greeter's own events, newest at the bottom.
+fn draw_log(ctx: &mut Ctx, rect: Rect, g: &Greeter) {
+    let t = ctx.theme;
+    let inner = ctx.frame(rect, Some("ACCESS LOG"));
+    let line = ctx.line();
+    let small = ctx.small();
+    let cw = ctx.metrics.cell_w * 0.9;
+    let rows = ((inner.h - 8.0) / line).floor().max(0.0) as usize;
+    let skip = g.log.len().saturating_sub(rows);
+    let max_chars = ((inner.w - 80.0) / cw).max(6.0) as usize;
+    let mut y = inner.y + 4.0;
+    for (i, (ts, text, err)) in g.log.iter().skip(skip).enumerate() {
+        let newest = skip + i + 1 == g.log.len();
+        ctx.scene.text_aligned(
+            Rect::new(inner.x, y, 76.0, line),
+            small,
+            t.text_dim,
+            Align::Left,
+            ts.clone(),
+        );
+        let color = if *err {
+            t.error
+        } else if newest {
+            t.text_primary
+        } else {
+            t.text_secondary
+        };
+        let body: String = text.chars().take(max_chars).collect();
+        ctx.scene.text_aligned(
+            Rect::new(inner.x + 78.0, y, inner.w - 78.0, line),
+            small,
+            color,
+            Align::Left,
+            format!("> {body}"),
+        );
+        y += line;
+    }
+    // Blinking cursor after the newest entry.
+    if g.cfg.animations
+        && ((g.started_secs() * 2.0) as u64).is_multiple_of(2)
+        && y + line <= inner.bottom()
+    {
+        ctx.scene
+            .fill(Rect::new(inner.x + 78.0, y + 3.0, cw, line - 6.0), t.border);
+    }
 }

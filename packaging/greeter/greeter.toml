@@ -1,9 +1,12 @@
 # /etc/edex-greeter/greeter.toml — every key is optional.
+# Fallback theme; each user's own eDEX theme is used once they have logged in to eDEX-DE.
 theme = "tron"
 # background = "/usr/share/edex-de/backgrounds/hexgrid-1080p.png"
 default_session = "edex-de"
 show_users = true
 power_buttons = true
 font_size = 15.0
+# Scan line and pulsing borders (turn off for very slow software rendering).
+animations = true
 min_uid = 1000
 state_file = "/var/cache/edex-greeter/state.toml"

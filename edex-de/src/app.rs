@@ -853,6 +853,45 @@ impl App {
         }
     }
 
+    /// ranger in a new terminal tab (the eDEX file manager), in `path` or the file panel's
+    /// directory; the tab closes when ranger quits.
+    pub fn open_files(
+        &mut self,
+        platform: &mut Platform<AppEvent>,
+        path: Option<std::path::PathBuf>,
+    ) -> std::result::Result<(), String> {
+        let dir = path.unwrap_or_else(|| self.state.filesystem.cwd.clone());
+        let (dir, select) = if dir.is_dir() {
+            (dir, None)
+        } else {
+            (
+                dir.parent().map(|p| p.to_path_buf()).unwrap_or_default(),
+                Some(dir),
+            )
+        };
+        // Borders and column ratios closer to the eDEX look; colours follow the terminal palette,
+        // which follows the theme.
+        let mut args = vec![
+            "--cmd=set draw_borders both".to_string(),
+            "--cmd=set column_ratios 1,3,3".to_string(),
+        ];
+        if let Some(file) = select {
+            args.push(format!("--selectfile={}", file.display()));
+        } else {
+            args.push(dir.display().to_string());
+        }
+        if !launcher::desktop::executable_exists("ranger") {
+            return Err("ranger is not installed".into());
+        }
+        self.terminal
+            .new_command_tab("ranger", args, Some(dir))
+            .map_err(|e| format!("{e:#}"))?;
+        self.state.focus = ui::state::PanelFocus::Terminal;
+        self.bring_terminal_forward(platform);
+        self.mark_canvas_dirty();
+        Ok(())
+    }
+
     fn cursor_visible(&self) -> bool {
         if !self.config.terminal.cursor_blink || !self.terminal.cursor_blinks() {
             return true;
@@ -872,6 +911,9 @@ impl App {
             .unwrap_or_else(builtin_tron);
         self.state.theme = theme;
         self.state.theme.glow = c.appearance.border_glow;
+        if self.opts.smoke.is_none() {
+            publish_greeter_theme(&self.state.theme.name);
+        }
         if c.appearance.theme_apps && self.opts.smoke.is_none() {
             let font = if c.appearance.font.is_empty() {
                 "JetBrainsMono Nerd Font".to_string()
@@ -1464,4 +1506,29 @@ pub fn run(opts: RunOptions) -> Result<i32> {
         return Ok(if ok { 0 } else { 1 });
     }
     Ok(0)
+}
+
+/// Tell the login screen which theme this user uses (`/var/lib/edex-greeter/themes/<user>`,
+/// created by tmpfiles; missing outside eDEX-OS, which is fine).
+fn publish_greeter_theme(theme: &str) {
+    static LAST: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+    let mut last = LAST.lock().unwrap_or_else(|e| e.into_inner());
+    if last.as_deref() == Some(theme) {
+        return;
+    }
+    *last = Some(theme.to_string());
+    let dir = std::path::Path::new("/var/lib/edex-greeter/themes");
+    let Some(user) = std::env::var_os("USER").filter(|u| !u.is_empty()) else {
+        return;
+    };
+    if !dir.is_dir() {
+        return;
+    }
+    let path = dir.join(&user);
+    let tmp = dir.join(format!(".{}.tmp", user.to_string_lossy()));
+    let res = std::fs::write(&tmp, format!("{theme}\n")).and_then(|_| std::fs::rename(&tmp, &path));
+    if let Err(e) = res {
+        let _ = std::fs::remove_file(&tmp);
+        tracing::debug!("publishing the login theme: {e}");
+    }
 }

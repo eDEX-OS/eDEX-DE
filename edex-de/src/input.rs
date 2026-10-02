@@ -577,6 +577,11 @@ fn canvas_click(
             }
         }
         HitTarget::FilesystemArea => app.state.focus = PanelFocus::Filesystem,
+        HitTarget::FsRanger => {
+            if let Err(e) = app.open_files(platform, None) {
+                crate::status::push_local_notification(app, platform, "Files", &e);
+            }
+        }
         HitTarget::FsEntry(i) => {
             app.state.focus = PanelFocus::Filesystem;
             let fs = &mut app.state.filesystem;

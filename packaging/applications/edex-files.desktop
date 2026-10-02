@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Files
+GenericName=File Manager
+Comment=Browse files with ranger in the eDEX terminal
+Exec=edex-de ipc files %f
+Icon=system-file-manager
+Terminal=false
+TryExec=edex-de
+Categories=System;FileTools;FileManager;
+MimeType=inode/directory;
+Keywords=files;folders;file manager;ranger;explorer;browse;
+StartupNotify=false

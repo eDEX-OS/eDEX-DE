@@ -24,6 +24,21 @@ pub fn refresh_sysinfo(app: &mut App) {
     si.kernel = s.kernel.clone();
     si.ram_used_kb = s.ram_used_kb;
     si.ram_total_kb = s.ram_total_kb;
+    si.ram_cached_kb = s.ram_cached_kb;
+    si.temps = s.temps.clone();
+    si.gpus = s
+        .gpus
+        .iter()
+        .map(|g| ui::state::GpuDisplay {
+            name: g.name.clone(),
+            busy_pct: g.busy_pct,
+            vram_used_bytes: g.vram_used_bytes,
+            vram_total_bytes: g.vram_total_bytes,
+            temp_c: g.temp_c,
+            power_w: g.power_w,
+            clock_mhz: g.clock_mhz,
+        })
+        .collect();
     si.swap_used_kb = s.swap_used_kb;
     si.swap_total_kb = s.swap_total_kb;
     si.net_tx_history = s.net_tx_history.clone();

@@ -161,6 +161,16 @@ fn handle(app: &mut App, platform: &mut Platform<AppEvent>, req: Request) -> Res
             crate::status::push_local_notification(app, platform, &summary, &body);
             Response::ok()
         }
+        Request::Files { path } => {
+            let path = path.map(|p| {
+                let p = p.strip_prefix("file://").unwrap_or(&p).to_string();
+                std::path::PathBuf::from(p)
+            });
+            match app.open_files(platform, path) {
+                Ok(()) => Response::ok(),
+                Err(e) => Response::err(e),
+            }
+        }
         Request::Action { name } => match name.as_str() {
             "install" => {
                 let _ = launcher::runner::spawn_detached("edex-install", app.hypr.is_some());

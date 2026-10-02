@@ -96,6 +96,16 @@ fn ipc_cli(args: &[String]) -> i32 {
             }
         }
         Err(e) => {
+            // Outside an eDEX session (e.g. a folder opened from another desktop) `files` still
+            // opens ranger, in kitty.
+            if let ipc::proto::Request::Files { path } = &request {
+                let mut cmd = std::process::Command::new("kitty");
+                cmd.args(["--class", "ranger", "-e", "ranger"]);
+                cmd.args(path.iter());
+                if cmd.spawn().is_ok() {
+                    return 0;
+                }
+            }
             eprintln!("edex-de ipc: {e:#}");
             3
         }

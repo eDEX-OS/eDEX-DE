@@ -21,6 +21,17 @@ pub struct DiskDisplay {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+pub struct GpuDisplay {
+    pub name: String,
+    pub busy_pct: Option<f32>,
+    pub vram_used_bytes: Option<u64>,
+    pub vram_total_bytes: Option<u64>,
+    pub temp_c: Option<f32>,
+    pub power_w: Option<f32>,
+    pub clock_mhz: Option<u32>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct ProcDisplay {
     pub pid: u32,
     pub name: String,
@@ -39,6 +50,10 @@ pub struct SysInfo {
     pub kernel: String,
     pub ram_used_kb: u64,
     pub ram_total_kb: u64,
+    pub ram_cached_kb: u64,
+    pub gpus: Vec<GpuDisplay>,
+    /// Temperature sensors (label, °C), hottest first.
+    pub temps: Vec<(String, f32)>,
     pub swap_used_kb: u64,
     pub swap_total_kb: u64,
     pub net_tx_history: Vec<f32>,

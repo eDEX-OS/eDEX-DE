@@ -4,7 +4,10 @@ use std::{collections::VecDeque, time::Instant};
 
 use sysinfo::{Components, Disks, Networks, ProcessesToUpdate, System};
 
-use crate::battery::read_battery;
+use crate::{
+    battery::read_battery,
+    gpu::{GpuCollector, GpuInfo},
+};
 
 #[derive(Clone, Debug, Default)]
 pub struct SysSnapshot {
@@ -19,6 +22,11 @@ pub struct SysSnapshot {
     pub hostname: String,
     pub ram_used_kb: u64,
     pub ram_total_kb: u64,
+    /// Reclaimable (page cache, buffers): neither used nor free.
+    pub ram_cached_kb: u64,
+    pub gpus: Vec<GpuInfo>,
+    /// Every temperature sensor: (label, °C), hottest first.
+    pub temps: Vec<(String, f32)>,
     pub swap_used_kb: u64,
     pub swap_total_kb: u64,
     pub net_tx_kbps: f32,
@@ -60,6 +68,8 @@ pub struct SysmonCollector {
     history_len: usize,
     snapshot: SysSnapshot,
     ticks: u64,
+    gpu: GpuCollector,
+    gpus: Vec<GpuInfo>,
 }
 
 impl SysmonCollector {
@@ -75,6 +85,8 @@ impl SysmonCollector {
             history_len: 60,
             snapshot: SysSnapshot::default(),
             ticks: 0,
+            gpu: GpuCollector::new(),
+            gpus: Vec::new(),
         };
         collector.refresh();
         collector
@@ -97,7 +109,11 @@ impl SysmonCollector {
         self.networks.refresh(true);
         if self.ticks % 10 == 1 {
             self.disks.refresh(true);
+        }
+        if self.ticks % 2 == 1 {
             self.components.refresh(true);
+            // nvidia-smi is a process spawn: every other second is plenty.
+            self.gpus = self.gpu.sample();
         }
 
         let cpu_usage: Vec<f32> = self.system.cpus().iter().map(|c| c.cpu_usage()).collect();
@@ -192,6 +208,15 @@ impl SysmonCollector {
         });
         processes.truncate(12);
 
+        let mut temps: Vec<(String, f32)> = self
+            .components
+            .iter()
+            .filter_map(|c| Some((short_sensor_label(c.label()), c.temperature()?)))
+            .filter(|(_, t)| *t > 0.0 && *t < 150.0)
+            .collect();
+        temps.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        temps.dedup_by(|a, b| a.0 == b.0);
+
         let battery = read_battery();
         let load = System::load_average();
         self.snapshot = SysSnapshot {
@@ -210,6 +235,13 @@ impl SysmonCollector {
             hostname: System::host_name().unwrap_or_else(|| "edex".into()),
             ram_used_kb: self.system.used_memory() / 1024,
             ram_total_kb: self.system.total_memory() / 1024,
+            ram_cached_kb: self
+                .system
+                .available_memory()
+                .saturating_sub(self.system.free_memory())
+                / 1024,
+            gpus: self.gpus.clone(),
+            temps,
             swap_used_kb: self.system.used_swap() / 1024,
             swap_total_kb: self.system.total_swap() / 1024,
             net_tx_kbps,
@@ -241,6 +273,28 @@ impl SysmonCollector {
 impl Default for SysmonCollector {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// "amdgpu edge" → "GPU edge", "k10temp Tctl" → "CPU Tctl", "nvme Composite" → "NVMe".
+fn short_sensor_label(label: &str) -> String {
+    let mut words = label.split_whitespace();
+    let chip = words.next().unwrap_or("").to_ascii_lowercase();
+    let rest: Vec<&str> = words.collect();
+    let kind = match chip.as_str() {
+        "k10temp" | "coretemp" | "zenpower" | "cpu_thermal" | "x86_pkg_temp" => "CPU",
+        "amdgpu" | "nouveau" | "radeon" | "i915" | "xe" => "GPU",
+        c if c.starts_with("nvme") => "NVMe",
+        "acpitz" => "ACPI",
+        "iwlwifi_1" | "iwlwifi" | "mt7921_phy0" => "WiFi",
+        _ => "",
+    };
+    let rest = rest.join(" ");
+    let rest = rest.trim_start_matches("Package id 0").trim();
+    match (kind, rest) {
+        ("", _) => label.to_string(),
+        ("NVMe", "Composite") | (_, "") => kind.to_string(),
+        (k, r) => format!("{k} {r}"),
     }
 }
 

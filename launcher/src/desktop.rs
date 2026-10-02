@@ -241,7 +241,7 @@ fn parse_desktop_file(path: &Path, id: &str, current_desktop: &[String]) -> Pars
     })
 }
 
-fn executable_exists(name: &str) -> bool {
+pub fn executable_exists(name: &str) -> bool {
     let p = Path::new(name);
     if p.is_absolute() {
         return p.exists();
