@@ -1,0 +1,56 @@
+#!/bin/sh
+# greetd's default session: the eDEX greeter under cage, with fallbacks so a machine whose GPU
+# setup cage cannot drive never ends at a dead console.
+#   1. cage on all GPUs (wlroots needs a working renderer on every GPU it drives);
+#   2. cage on only the GPUs with a connected display (e.g. skips an NVIDIA card on nouveau
+#      without a working OpenGL driver when the monitor is on the other GPU);
+#   3. a text-mode login (tuigreet or agreety) that still starts the eDEX session.
+SESSION_CMD=${EDEX_SESSION_CMD:-edex-session}
+LOG=/var/cache/edex-greeter/greeter.log
+
+# The greeter user's home is /; give Mesa somewhere to keep its shader cache.
+export XDG_CACHE_HOME=/var/cache/edex-greeter/cache
+mkdir -p "$XDG_CACHE_HOME" 2>/dev/null
+
+log() { printf '%s %s\n' "$(date '+%F %T')" "$*" >>"$LOG" 2>/dev/null; }
+
+run_cage() {
+    start=$(date +%s)
+    cage -s -- edex-greeter >>"$LOG" 2>&1
+    rc=$?
+    # A normal exit (the user logged in) or a long run is not a start-up failure.
+    if [ "$rc" -eq 0 ] || [ $(($(date +%s) - start)) -gt 15 ]; then
+        exit "$rc"
+    fi
+    log "cage exited with $rc during start-up${WLR_DRM_DEVICES:+ (WLR_DRM_DEVICES=$WLR_DRM_DEVICES)}"
+}
+
+# Card devices (/dev/dri/cardN) that have at least one connected output.
+connected_cards() {
+    for status in /sys/class/drm/card*-*/status; do
+        [ "$(cat "$status" 2>/dev/null)" = connected ] || continue
+        conn=${status%/status}
+        card=${conn##*/}
+        echo "/dev/dri/${card%%-*}"
+    done | sort -u | paste -sd: -
+}
+
+log "starting the eDEX greeter"
+run_cage
+
+all_cards() {
+    for c in /dev/dri/card*; do [ -e "$c" ] && echo "$c"; done | sort -u | paste -sd: -
+}
+
+cards=$(connected_cards)
+if [ -n "$cards" ] && [ "$cards" != "$(all_cards)" ]; then
+    log "retrying on the GPUs with a display: $cards"
+    WLR_DRM_DEVICES=$cards run_cage
+fi
+
+log "graphical greeter unavailable; falling back to text login"
+printf '\n  eDEX-OS: the graphical login could not start on this GPU (see %s).\n\n' "$LOG"
+if command -v tuigreet >/dev/null 2>&1; then
+    exec tuigreet --time --remember --asterisks --greeting "eDEX-OS" --cmd "$SESSION_CMD"
+fi
+exec agreety --cmd "$SESSION_CMD"

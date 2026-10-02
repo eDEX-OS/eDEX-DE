@@ -4,6 +4,6 @@
 vt = 1
 
 [default_session]
-# cage runs the greeter as a kiosk compositor and fullscreens its single window.
-command = "cage -s -- edex-greeter"
+# cage runs the greeter as a kiosk compositor (with a text-login fallback if it cannot start).
+command = "edex-greeter-session"
 user = "greeter"

@@ -15,6 +15,7 @@ override_dh_auto_install:
 	install -Dm755 target/release/edex-de debian/edex-de/usr/bin/edex-de
 	install -Dm755 target/release/edex-greeter debian/edex-de/usr/bin/edex-greeter
 	install -Dm755 packaging/session/edex-session debian/edex-de/usr/bin/edex-session
+	install -Dm755 packaging/greetd/edex-greeter-session debian/edex-de/usr/bin/edex-greeter-session
 	install -Dm644 packaging/session/edex-de.desktop debian/edex-de/usr/share/wayland-sessions/edex-de.desktop
 	install -Dm644 -t debian/edex-de/usr/share/applications packaging/applications/*.desktop
 	install -Dm644 packaging/session/edex-de-portals.conf debian/edex-de/usr/share/xdg-desktop-portal/edex-de-portals.conf

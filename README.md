@@ -75,7 +75,7 @@ cargo run -p edex-greeter -- --demo                              # greeter witho
 ## How a session starts
 
 ```
-greetd (tty1) → cage -s -- edex-greeter → edex-session → start-hyprland
+greetd (tty1) → edex-greeter-session (cage -s -- edex-greeter, text-login fallback) → edex-session → start-hyprland
    Hyprland reads ~/.config/hypr/hyprland.lua
       → require("edex") → /usr/share/edex-de/hypr/edex/*.lua (env, monitors, look, input, rules, binds, autostart)
       → dofile ~/.config/edex-de/hypr/generated.lua   (written by the settings panel)

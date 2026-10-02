@@ -18,7 +18,28 @@ if [ ! -e "$CONFIG_HOME/hypr/hyprland.lua" ] && [ ! -e "$CONFIG_HOME/hypr/hyprla
     echo "installed default ~/.config/hypr/hyprland.lua"
 fi
 
+HYPRLAND="Hyprland"
 if command -v start-hyprland >/dev/null 2>&1; then
-    exec start-hyprland "$@"
+    HYPRLAND="start-hyprland"
 fi
-exec Hyprland "$@"
+
+start=$(date +%s)
+"$HYPRLAND" "$@"
+rc=$?
+# Hyprland needs a working renderer on every GPU it opens. If it dies right away on a
+# multi-GPU machine, try again on only the GPUs that have a monitor attached.
+if [ "$rc" -ne 0 ] && [ $(($(date +%s) - start)) -lt 20 ] && [ -z "$AQ_DRM_DEVICES" ]; then
+    cards=$(for status in /sys/class/drm/card*-*/status; do
+        [ "$(cat "$status" 2>/dev/null)" = connected ] || continue
+        conn=${status%/status}
+        card=${conn##*/}
+        echo "/dev/dri/${card%%-*}"
+    done | sort -u | paste -sd: -)
+    all=$(for c in /dev/dri/card*; do [ -e "$c" ] && echo "$c"; done | sort -u | paste -sd: -)
+    if [ -n "$cards" ] && [ "$cards" != "$all" ]; then
+        echo "Hyprland exited with $rc during start-up; retrying with AQ_DRM_DEVICES=$cards"
+        export AQ_DRM_DEVICES="$cards"
+        exec "$HYPRLAND" "$@"
+    fi
+fi
+exit "$rc"

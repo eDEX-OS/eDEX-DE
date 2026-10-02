@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.3.1 — 2026-10-02
+
+* **Login never dead-ends on a console.** greetd now runs `edex-greeter-session`: cage on all
+  GPUs, then (if that fails at start-up) cage on only the GPUs with a monitor attached, then a
+  text login (tuigreet, or agreety) that still starts the eDEX session. Seen on a Ryzen iGPU +
+  GeForce (nouveau) desktop where wlroots could not create a renderer for the NVIDIA card.
+* `edex-session` retries Hyprland on the GPUs with a monitor attached (`AQ_DRM_DEVICES`) when it
+  exits during start-up on a multi-GPU machine.
+* The greeter's Mesa shader cache goes to `/var/cache/edex-greeter/cache` (it tried `//.cache`).
+
 ## 3.3.0 — 2026-10-02
 
 * **System panel:** a block for every GPU (AMD, Intel and nouveau through sysfs, NVIDIA through

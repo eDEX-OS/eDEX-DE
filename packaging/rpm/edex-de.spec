@@ -3,7 +3,7 @@
 %{!?_tmpfilesdir:%global _tmpfilesdir %{_prefix}/lib/tmpfiles.d}
 
 Name:           edex-de
-Version:        3.3.0
+Version:        3.3.1
 Release:        1%{?dist}
 Summary:        eDEX-DE - sci-fi desktop shell for Hyprland
 License:        GPL-3.0-only
@@ -37,6 +37,7 @@ cargo test --release --locked --workspace
 install -Dm755 target/release/edex-de %{buildroot}%{_bindir}/edex-de
 install -Dm755 target/release/edex-greeter %{buildroot}%{_bindir}/edex-greeter
 install -Dm755 packaging/session/edex-session %{buildroot}%{_bindir}/edex-session
+install -Dm755 packaging/greetd/edex-greeter-session %{buildroot}%{_bindir}/edex-greeter-session
 install -Dm644 packaging/session/edex-de.desktop %{buildroot}%{_datadir}/wayland-sessions/edex-de.desktop
 install -Dm644 -t %{buildroot}%{_datadir}/applications packaging/applications/*.desktop
 install -Dm644 packaging/session/edex-de-portals.conf %{buildroot}%{_datadir}/xdg-desktop-portal/edex-de-portals.conf
@@ -61,6 +62,7 @@ install -Dm644 assets/logo.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/ap
 %{_bindir}/edex-de
 %{_bindir}/edex-greeter
 %{_bindir}/edex-session
+%{_bindir}/edex-greeter-session
 %{_datadir}/wayland-sessions/edex-de.desktop
 %{_datadir}/applications/edex-settings.desktop
 %{_datadir}/applications/edex-privacy.desktop
@@ -75,6 +77,9 @@ install -Dm644 assets/logo.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/ap
 %{_datadir}/icons/hicolor/*/apps/edex-de.*
 
 %changelog
+* Fri Oct 02 2026 eDEX-OS <edex-de@github.com> - 3.3.1-1
+- Greeter launcher with GPU retry and text-login fallback; edex-session GPU retry
+
 * Fri Oct 02 2026 eDEX-OS <edex-de@github.com> - 3.3.0-1
 - GPU and temperature monitors, eDEX-UI memory grid, ranger file manager, login screen redesign
 

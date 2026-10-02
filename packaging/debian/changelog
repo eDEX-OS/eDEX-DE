@@ -1,3 +1,10 @@
+edex-de (3.3.1-1) unstable; urgency=medium
+
+  * Greeter launcher with per-GPU retry and text-login fallback.
+  * edex-session retries Hyprland on the GPUs with a display.
+
+ -- eDEX-OS <edex-de@github.com>  Fri, 02 Oct 2026 18:00:00 +0000
+
 edex-de (3.3.0-1) unstable; urgency=medium
 
   * GPU, temperature and eDEX-UI memory grid in the system panel.
