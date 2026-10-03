@@ -102,8 +102,41 @@ jobs:
           SUM=$(sha256sum src.tar.gz | cut -d' ' -f1)
           sed -e "s/^pkgver=.*/pkgver=$V/" -e "s/^sha256sums=.*/sha256sums=('$SUM')/" packaging/aur/PKGBUILD > PKGBUILD
           cat PKGBUILD
+      # aur.archlinux.org regularly drops connections (TLS resets under load): retry twice.
       - name: Publish to AUR
+        id: aur1
         if: ${{ env.AUR_SSH_PRIVATE_KEY != '' }}
+        continue-on-error: true
+        uses: KSXGitHub/github-actions-deploy-aur@v3
+        with:
+          pkgname: edex-de
+          pkgbuild: ./PKGBUILD
+          commit_username: eDEX-OS
+          commit_email: edex-de@github.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to ${{ env.TAG }}"
+      - name: Wait before retrying the AUR
+        if: ${{ env.AUR_SSH_PRIVATE_KEY != '' && steps.aur1.outcome == 'failure' }}
+        run: sleep 90
+      - name: Publish to AUR (attempt 2)
+        id: aur2
+        if: ${{ env.AUR_SSH_PRIVATE_KEY != '' && steps.aur1.outcome == 'failure' }}
+        continue-on-error: true
+        uses: KSXGitHub/github-actions-deploy-aur@v3
+        with:
+          pkgname: edex-de
+          pkgbuild: ./PKGBUILD
+          commit_username: eDEX-OS
+          commit_email: edex-de@github.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to ${{ env.TAG }}"
+      - name: Wait before retrying the AUR
+        if: ${{ env.AUR_SSH_PRIVATE_KEY != '' && steps.aur2.outcome == 'failure' }}
+        run: sleep 90
+      - name: Publish to AUR (attempt 3)
+        id: aur3
+        if: ${{ env.AUR_SSH_PRIVATE_KEY != '' && steps.aur1.outcome == 'failure' && steps.aur2.outcome == 'failure' }}
+        continue-on-error: false
         uses: KSXGitHub/github-actions-deploy-aur@v3
         with:
           pkgname: edex-de
